@@ -6,15 +6,15 @@ import { money, qty, formatDate } from '../../lib/format';
 // One generic template (VISION §7), mirroring the on-screen InvoiceDocument.
 // Real vector PDF — selectable text, crisp at any zoom.
 
-const INK = '#14161a';
-const MUTED = '#6b7280';
-const LINE = '#e4e7eb';
-const ACCENT = '#1c37a8';
+const INK = '#211e1a';
+const MUTED = '#6b6358';
+const LINE = '#e4ddd0';
+const ACCENT = '#143f2a';
 
 const s = StyleSheet.create({
   page: { paddingVertical: 54, paddingHorizontal: 54, fontSize: 10, color: INK, fontFamily: 'Helvetica' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  title: { fontSize: 26, fontFamily: 'Helvetica-Bold', letterSpacing: -0.5 },
+  title: { fontSize: 28, fontFamily: 'Times-Bold', letterSpacing: -0.5 },
   number: { marginTop: 6, fontSize: 10, color: ACCENT, fontFamily: 'Helvetica-Bold' },
   dateLabel: { fontSize: 8, color: MUTED, letterSpacing: 0.6, textTransform: 'uppercase', textAlign: 'right' },
   dateValue: { fontSize: 10, marginTop: 3, textAlign: 'right' },
@@ -37,8 +37,8 @@ const s = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
   totalMuted: { color: MUTED },
   grandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderTopColor: LINE, paddingTop: 8, marginTop: 4 },
-  grandLabel: { fontSize: 12, fontFamily: 'Helvetica-Bold' },
-  grandValue: { fontSize: 15, fontFamily: 'Helvetica-Bold' },
+  grandLabel: { fontSize: 13, fontFamily: 'Times-Bold' },
+  grandValue: { fontSize: 17, fontFamily: 'Times-Bold', color: ACCENT },
   notes: { fontSize: 9, color: MUTED, marginTop: 4, lineHeight: 1.5 },
   footer: { position: 'absolute', bottom: 32, left: 54, right: 54, fontSize: 8, color: MUTED, textAlign: 'center' },
 });

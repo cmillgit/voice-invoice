@@ -12,7 +12,7 @@ export function Wordmark({ compact = false }: { compact?: boolean }) {
         <rect x="18" y="10" width="2.5" height="6" fill="var(--accent)" />
       </svg>
       {!compact && (
-        <span style={{ fontSize: 'var(--text-md)', fontWeight: 650, letterSpacing: '-0.02em' }}>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-lg)', fontWeight: 600, letterSpacing: '-0.01em' }}>
           Voice<span style={{ color: 'var(--accent)' }}>Invoice</span>
         </span>
       )}
