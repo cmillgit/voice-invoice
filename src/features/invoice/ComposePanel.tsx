@@ -1,46 +1,75 @@
 import { useState } from 'react';
 import { useSpeech } from './useSpeech';
+import { speechOut } from './speech-out';
 import { MicButton } from './MicButton';
 import { SendIcon } from '../../components/icons';
-
-interface Turn { role: 'user' | 'agent'; text: string }
+import type { Turn } from './agent';
 
 /**
  * Voice compose surface (VISION §4.1). Mic captures speech; the transcript is editable
- * and nothing submits until Send. The Send handler will (step 5) call the Supabase Edge
- * Function → Claude to extract structured invoice inputs and apply them to the draft.
- * Until then, Send records the turn so the interaction model is in place.
+ * and nothing submits until Send. On Send we call the agent (via onUtterance), which
+ * resolves the dictation into the draft and returns a short reply that is shown and
+ * spoken aloud. The agent never speaks while the mic is listening.
  */
 export function ComposePanel({
   disabled,
-  onApplyParsed,
+  onUtterance,
 }: {
   disabled?: boolean;
-  onApplyParsed: (utterance: string) => void;
+  onUtterance: (utterance: string, conversation: Turn[]) => Promise<string>;
 }) {
-  const { supported, listening, transcript, interim, error, setTranscript, toggle, clear } = useSpeech();
+  const { supported, listening, transcript, interim, error, setTranscript, start, pause, clear } = useSpeech();
   const [turns, setTurns] = useState<Turn[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(speechOut.supported);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const pending = (transcript + (interim ? ` ${interim}` : '')).trim();
 
-  function send() {
+  function handleMic() {
+    if (listening) { pause(); return; }
+    speechOut.cancel(); // never let the agent talk over him
+    start();
+  }
+
+  async function send() {
     const text = transcript.trim();
-    if (!text) return;
-    setTurns((t) => [
-      ...t,
-      { role: 'user', text },
-      { role: 'agent', text: 'Voice understanding is wired up next — for now, add line items below. Your words were captured.' },
-    ]);
-    onApplyParsed(text);
+    if (!text || busy) return;
+    if (listening) pause();
+    speechOut.cancel();
+
+    const prior = turns;
+    setTurns((t) => [...t, { role: 'user', text }]);
     clear();
+    setBusy(true);
+    setSendError(null);
+    try {
+      const reply = await onUtterance(text, prior);
+      setTurns((t) => [...t, { role: 'agent', text: reply }]);
+      if (voiceOn) speechOut.speak(reply);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Something went wrong.';
+      setSendError(msg);
+      setTurns((t) => [...t, { role: 'agent', text: `Sorry — ${msg}` }]);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <div className="card" style={{ padding: 'var(--s-4)', display: 'flex', flexDirection: 'column', gap: 'var(--s-3)' }}>
-      <div className="label">Dictate</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="label">Dictate</div>
+        {speechOut.supported && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--muted)' }}>
+            <input type="checkbox" checked={voiceOn} onChange={(e) => { setVoiceOn(e.target.checked); if (!e.target.checked) speechOut.cancel(); }} />
+            Voice replies
+          </label>
+        )}
+      </div>
 
       {turns.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)', maxHeight: 180, overflow: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)', maxHeight: 200, overflow: 'auto' }}>
           {turns.map((t, i) => (
             <div key={i} style={{
               alignSelf: t.role === 'user' ? 'flex-end' : 'flex-start',
@@ -51,26 +80,34 @@ export function ComposePanel({
               padding: '8px 10px', fontSize: 'var(--text-sm)',
             }}>{t.text}</div>
           ))}
+          {busy && (
+            <div style={{ alignSelf: 'flex-start', color: 'var(--muted)', fontSize: 'var(--text-sm)', padding: '4px 10px' }}>
+              Thinking…
+            </div>
+          )}
         </div>
       )}
 
       <div style={{ display: 'flex', gap: 'var(--s-3)', alignItems: 'stretch' }}>
-        <MicButton listening={listening} disabled={disabled || !supported} onToggle={toggle} />
+        <MicButton listening={listening} disabled={disabled || !supported || busy} onToggle={handleMic} />
         <textarea
           className="textarea"
           style={{ flex: 1, minHeight: 56 }}
           placeholder={supported ? 'Tap the mic and speak, or type here…' : 'Voice not supported in this browser — type here…'}
           value={pending}
-          disabled={disabled}
+          disabled={disabled || busy}
           onChange={(e) => setTranscript(e.target.value)}
         />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s-2)' }}>
         <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>
-          {listening ? 'Listening… tap the mic to pause.' : error ? `Mic error: ${error}` : 'Nothing is sent until you press Send.'}
+          {listening ? 'Listening… tap to pause.'
+            : sendError ? `Error: ${sendError}`
+            : error ? `Mic: ${error}`
+            : 'Nothing is sent until you press Send.'}
         </span>
-        <button className="btn btn-primary btn-sm" onClick={send} disabled={disabled || !transcript.trim()}>
+        <button className="btn btn-primary btn-sm" onClick={send} disabled={disabled || busy || !transcript.trim()}>
           <SendIcon size={14} /> Send
         </button>
       </div>

@@ -8,10 +8,13 @@
 > **Last updated:** 2026-06-13 · **Phase:** Build in progress (foundation through deterministic invoicing landed)
 
 > **Build status (2026-06-13):** Scaffolded React + Vite + TS app with the design system, email/password
-> auth gate, app shell (Invoice · Clients tabs), full Clients CRUD (rates + synonyms), and the invoice
-> flow — live preview, deterministic DB-computed totals, approval → write, date-based numbering — all
-> verified end-to-end against Supabase. **Done:** roadmap steps 0–4. **Next:** step 5 (agent Edge
-> Function for voice→structured extraction) and step 6 (PDF). See §10 for what's decided vs. open.
+> auth gate, app shell (Invoice · Clients tabs), full Clients CRUD (rates + synonyms), the invoice
+> flow (live preview, deterministic DB-computed totals, approval → write, date-based numbering), and the
+> **voice agent** — a JWT-verified Supabase Edge Function (`parse-invoice`) calling Claude with
+> structured outputs to turn dictation into draft line items, with synonym client resolution,
+> DB-sourced rates (LLM never supplies money), best-guess flagging, conversational corrections, and
+> voice+text replies. All verified end-to-end. **Done:** roadmap steps 0–5. **Next:** step 6 (PDF).
+> See §10 for what's decided vs. open.
 
 ---
 
