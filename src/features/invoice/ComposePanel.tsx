@@ -24,8 +24,6 @@ export function ComposePanel({
   const [voiceOn, setVoiceOn] = useState(speechOut.supported);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  const pending = (transcript + (interim ? ` ${interim}` : '')).trim();
-
   function handleMic() {
     if (listening) { pause(); return; }
     speechOut.cancel(); // never let the agent talk over him
@@ -90,14 +88,19 @@ export function ComposePanel({
 
       <div style={{ display: 'flex', gap: 'var(--s-3)', alignItems: 'stretch' }}>
         <MicButton listening={listening} disabled={disabled || !supported || busy} onToggle={handleMic} />
-        <textarea
-          className="textarea"
-          style={{ flex: 1, minHeight: 56 }}
-          placeholder={supported ? 'Tap the mic and speak, or type here…' : 'Voice not supported in this browser — type here…'}
-          value={pending}
-          disabled={disabled || busy}
-          onChange={(e) => setTranscript(e.target.value)}
-        />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <textarea
+            className="textarea"
+            style={{ flex: 1, minHeight: 56 }}
+            placeholder={supported ? 'Tap the mic and speak, or type here…' : 'Voice not supported in this browser — type here…'}
+            value={transcript}
+            disabled={disabled || busy}
+            onChange={(e) => setTranscript(e.target.value)}
+          />
+          {listening && interim && (
+            <div className="muted" style={{ fontSize: 'var(--text-xs)', fontStyle: 'italic' }}>{interim}</div>
+          )}
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s-2)' }}>

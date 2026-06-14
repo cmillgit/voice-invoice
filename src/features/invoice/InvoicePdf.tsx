@@ -79,7 +79,6 @@ export function InvoicePdf({ invoice }: { invoice: Invoice }) {
             <View key={li.id} style={s.tr} wrap={false}>
               <View style={s.cDesc}>
                 <Text>{li.description}</Text>
-                {li.is_flagged ? <Text style={s.flag}>Reviewed: {li.flag_note || 'best-guess'}</Text> : null}
               </View>
               <Text style={s.cQty}>{qty(li.quantity)} {rateTypeUnit(li.rate_type)}</Text>
               <Text style={s.cRate}>{money(li.rate_amount)}</Text>
