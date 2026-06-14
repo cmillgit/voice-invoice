@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Client, DraftLineItem, InvoiceDraft, RateType } from '../../lib/types';
+import type { Client, DraftLineItem, Invoice, InvoiceDraft, RateType } from '../../lib/types';
 import { RATE_TYPES, rateTypeUnit } from '../../lib/types';
 import { listClients } from '../clients/api';
 import { lineAmount, subtotal, invoiceTotal } from '../../lib/calc';
@@ -8,7 +8,7 @@ import { approveInvoice } from './api';
 import { runAgentTurn, type Turn } from './agent';
 import { InvoiceDocument } from './InvoiceDocument';
 import { ComposePanel } from './ComposePanel';
-import { CheckIcon, PlusIcon, TrashIcon } from '../../components/icons';
+import { CheckIcon, FileIcon, PlusIcon, TrashIcon } from '../../components/icons';
 
 const emptyDraft = (): InvoiceDraft => ({
   client_id: null,
@@ -26,6 +26,8 @@ export function InvoicePage() {
   const [draft, setDraft] = useState<InvoiceDraft>(emptyDraft);
   const [approving, setApproving] = useState(false);
   const [approvedNumber, setApprovedNumber] = useState<string | null>(null);
+  const [approvedInvoice, setApprovedInvoice] = useState<Invoice | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { listClients().then(setClients).catch(() => {}); }, []);
@@ -102,6 +104,7 @@ export function InvoicePage() {
     try {
       const saved = await approveInvoice(draft);
       setApprovedNumber(saved.invoice_number);
+      setApprovedInvoice(saved);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save invoice.');
     } finally {
@@ -109,9 +112,24 @@ export function InvoicePage() {
     }
   }
 
+  async function downloadPdf() {
+    if (!approvedInvoice) return;
+    setPdfBusy(true);
+    try {
+      // Lazy-load react-pdf so it stays out of the initial bundle.
+      const { downloadInvoicePdf } = await import('./InvoicePdf');
+      await downloadInvoicePdf(approvedInvoice);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate PDF.');
+    } finally {
+      setPdfBusy(false);
+    }
+  }
+
   function reset() {
     setDraft(emptyDraft());
     setApprovedNumber(null);
+    setApprovedInvoice(null);
     setError(null);
   }
 
@@ -220,7 +238,12 @@ export function InvoicePage() {
                 <CheckIcon size={18} />
                 <span style={{ fontWeight: 600 }}>Invoice #{approvedNumber} saved.</span>
               </div>
-              <button className="btn" onClick={reset}>New invoice</button>
+              <div style={{ display: 'flex', gap: 'var(--s-2)' }}>
+                <button className="btn btn-primary" onClick={downloadPdf} disabled={pdfBusy}>
+                  <FileIcon size={16} /> {pdfBusy ? 'Preparing…' : 'Download PDF'}
+                </button>
+                <button className="btn" onClick={reset}>New invoice</button>
+              </div>
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

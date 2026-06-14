@@ -5,16 +5,17 @@
 > this document is updated in the same session that changes it. Treat its accuracy as a maintained
 > invariant, not a one-time output.
 >
-> **Last updated:** 2026-06-13 · **Phase:** Build in progress (foundation through deterministic invoicing landed)
+> **Last updated:** 2026-06-13 · **Phase:** Phase 1 feature-complete
 
-> **Build status (2026-06-13):** Scaffolded React + Vite + TS app with the design system, email/password
-> auth gate, app shell (Invoice · Clients tabs), full Clients CRUD (rates + synonyms), the invoice
-> flow (live preview, deterministic DB-computed totals, approval → write, date-based numbering), and the
-> **voice agent** — a JWT-verified Supabase Edge Function (`parse-invoice`) calling Claude with
-> structured outputs to turn dictation into draft line items, with synonym client resolution,
-> DB-sourced rates (LLM never supplies money), best-guess flagging, conversational corrections, and
-> voice+text replies. All verified end-to-end. **Done:** roadmap steps 0–5. **Next:** step 6 (PDF).
-> See §10 for what's decided vs. open.
+> **Build status (2026-06-13):** Phase 1 is built and verified end-to-end — React + Vite + TS app with the
+> design system, email/password auth gate, app shell (Invoice · Clients tabs), full Clients CRUD (rates +
+> synonyms), the invoice flow (live preview, deterministic DB-computed totals, approval → write, date-based
+> numbering), the **voice agent** (JWT-verified Supabase Edge Function `parse-invoice` → Claude with
+> structured outputs; synonym client resolution, DB-sourced rates so the LLM never supplies money,
+> best-guess flagging, conversational corrections, voice+text replies), and **PDF export** (real vector
+> PDF via `@react-pdf/renderer`, lazy-loaded, matching the on-screen template). **Done:** roadmap steps
+> 0–6 — all of phase 1. **Next:** the deferred items in §10 (chiefly email delivery), and pre-production
+> hardening (rotate the shared secrets, enable leaked-password protection). See §10 for decided vs. open.
 
 ---
 
