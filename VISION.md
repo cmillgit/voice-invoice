@@ -290,25 +290,24 @@ without reshaping the document.
 
 ### Design language
 
-The product should feel like it came out of a **Fortune 500 technology company**: professional,
-understated, modern, and quietly confident. The aesthetic is **linear and angular** — structure and
-restraint over decoration.
+**"Trade & Craft"** (adopted 2026-06-13, replacing the original Fortune-500-tech direction, which on
+the live app read as generic/sterile for a field-business owner). The product should feel **warm,
+grounded, and trustworthy** — like the brand of an established, quality tradesperson — while staying
+clean and highly legible. Accessibility (readability, large targets) is part of the look, not separate.
 
 **Principles**
 
-- **Understated and content-first.** The invoice and the conversation are the heroes. Chrome
-  recedes. No gradients-for-the-sake-of-it, no playful illustration, no visual noise.
-- **Linear / angular geometry.** Crisp edges, minimal or small corner radii, clean 1px dividers,
-  strong alignment to a grid. Structure is communicated through spacing and rule lines, not
-  shadows and color.
-- **Generous, disciplined spacing.** A consistent spacing scale and a clear typographic hierarchy do
-  the heavy lifting. Let the layout breathe.
-- **Restrained palette.** A near-neutral base (white / near-black / grays) with a **single, sober
-  accent** color used sparingly for primary actions and key state. High contrast for legibility.
-- **Typography.** A clean, professional sans-serif. Tabular/monospaced figures for all money and
-  quantities so columns align and numbers are unambiguous.
-- **Calm, purposeful motion.** Transitions are quick, subtle, and functional (e.g. the preview
-  updating). Nothing bouncy or attention-seeking.
+- **Warm, grounded palette.** A bone/off-white canvas (`#f6f2ea`), warm near-black ink, and a single
+  **deep-green accent** (`#1f5c3d`) used for primary actions and key state. Warm rule lines over
+  shadows. (The earlier flat neutral + tech-blue is retired.)
+- **Characterful typography.** **Fraunces** serif for display headings, the wordmark, the invoice
+  title, and totals; **Public Sans** for body. Tabular figures for all money and quantities so
+  columns align. (Replaces the generic Inter-style sans.)
+- **Readable and forgiving by default.** Larger base type (15px) and larger touch/click targets
+  (≥42px primary controls) — driven by the accessibility priority, not just taste.
+- **Content-first.** The invoice and the conversation are the heroes; chrome recedes. No noise, no
+  decorative gradients.
+- **Calm, purposeful motion.** Transitions are quick, subtle, functional (e.g. the preview updating).
 - **Clarity of state.** The mic's listening/paused state, "unsent transcript pending," "agent
   thinking," and "saved/approved" are all communicated unmistakably but without drama.
 
@@ -366,7 +365,9 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
 - **Rate config stored as structured parameters** (validated `rate_type` enum + numeric values),
   interpreted by a fixed parameterized backend query. **No stored executable SQL / no string-eval of
   per-client formulas.** (Exact schema is still an architecture task.)
-- Aesthetic: professional, understated, modern, **linear/angular**, Fortune-500-tech.
+- Aesthetic: **"Trade & Craft"** — warm bone canvas, deep-green accent, Fraunces serif headings +
+  Public Sans body, larger type/targets for accessibility (adopted 2026-06-13; supersedes the original
+  Fortune-500-tech direction).
 - **Desktop first**, mobile later.
 
 ### Open / deferred (revisit deliberately)

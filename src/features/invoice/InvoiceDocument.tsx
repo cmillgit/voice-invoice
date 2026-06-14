@@ -50,7 +50,7 @@ export function InvoiceDocument(props: DocProps) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 680, letterSpacing: '-0.03em' }}>Invoice</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-2xl)', fontWeight: 600, letterSpacing: '-0.02em' }}>Invoice</div>
           <div className="mono" style={{ marginTop: 6, color: draft ? 'var(--faint)' : 'var(--accent-ink)', fontWeight: 600 }}>
             {draft ? 'DRAFT — not yet issued' : `#${props.number}`}
           </div>
@@ -128,8 +128,8 @@ export function InvoiceDocument(props: DocProps) {
         {props.materialsTotal > 0 && <Row label="Materials" value={money(props.materialsTotal)} />}
         <hr className="divider" style={{ margin: 'var(--s-1) 0' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <span style={{ fontWeight: 650, fontSize: 'var(--text-md)' }}>Total</span>
-          <span className="tnum" style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}>{money(props.total)}</span>
+          <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 'var(--text-md)' }}>Total</span>
+          <span className="tnum" style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 'var(--text-xl)', color: 'var(--accent-ink)' }}>{money(props.total)}</span>
         </div>
       </div>
 

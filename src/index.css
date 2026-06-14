@@ -1,46 +1,48 @@
 /* =========================================================================
    VoiceInvoice — design system
-   Aesthetic (VISION §8): professional, understated, modern, linear/angular,
-   Fortune-500-tech. Structure via spacing + 1px rules, not shadows. Restrained
-   neutral palette + a single sober accent. Tabular figures for all money.
+   Aesthetic: "Trade & Craft" — warm, grounded, trustworthy. Warm bone canvas,
+   deep-green accent, Fraunces serif for display headings, a legible humanist
+   sans for body. Larger type and targets for accessibility. Tabular figures
+   for all money. Structure via spacing + warm rule lines, not shadows.
    ========================================================================= */
 
 :root {
-  /* Palette — near-neutral base */
-  --canvas:      #f5f6f8;   /* app background */
+  /* Palette — warm, grounded */
+  --canvas:      #f6f2ea;   /* app background (bone) */
   --surface:     #ffffff;   /* cards, document */
-  --surface-2:   #fafbfc;   /* subtle inset panels */
-  --ink:         #14161a;   /* primary text (near-black) */
-  --ink-2:       #3d434d;   /* secondary text */
-  --muted:       #6b7280;   /* tertiary / labels */
-  --faint:       #9aa1ab;   /* placeholder */
-  --line:        #e4e7eb;   /* 1px dividers / borders */
-  --line-strong: #cfd4da;
-  --accent:      #2545d3;   /* single sober accent */
-  --accent-ink:  #1c37a8;   /* accent text/hover */
-  --accent-soft: #eef1fd;   /* accent tint background */
-  --danger:      #b42318;
-  --danger-soft: #fdecea;
-  --flag:        #b45309;   /* best-guess flag (amber) */
-  --flag-soft:   #fdf3e7;
-  --ok:          #027a48;
+  --surface-2:   #fbf8f2;   /* subtle inset panels */
+  --ink:         #211e1a;   /* primary text (warm near-black) */
+  --ink-2:       #4a453d;   /* secondary text */
+  --muted:       #6b6358;   /* tertiary / labels */
+  --faint:       #9a9082;   /* placeholder */
+  --line:        #e4ddd0;   /* dividers / borders */
+  --line-strong: #d2c8b6;
+  --accent:      #1f5c3d;   /* deep green */
+  --accent-ink:  #143f2a;   /* accent text/hover (darker green) */
+  --accent-soft: #e7f0e9;   /* accent tint background */
+  --danger:      #a23e25;
+  --danger-soft: #f7e9e3;
+  --flag:        #9a5b16;   /* best-guess flag (warm amber) */
+  --flag-soft:   #f6ecda;
+  --ok:          #1f5c3d;
 
-  /* Geometry — angular, small radii */
-  --radius:    4px;
-  --radius-sm: 3px;
+  /* Geometry — soft-angular */
+  --radius:    6px;
+  --radius-sm: 4px;
 
   /* Spacing scale */
   --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
   --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
 
-  /* Typography */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-               Helvetica, Arial, sans-serif;
+  /* Typography — Fraunces (display) + Public Sans (body) */
+  --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace,
                Menlo, Consolas, monospace;
 
-  --text-xs: 11px; --text-sm: 13px; --text-base: 14px;
-  --text-md: 16px; --text-lg: 20px; --text-xl: 26px; --text-2xl: 34px;
+  --text-xs: 12px; --text-sm: 13px; --text-base: 15px;
+  --text-md: 16px; --text-lg: 21px; --text-xl: 28px; --text-2xl: 36px;
 
   /* Motion — quick, subtle, functional */
   --ease: cubic-bezier(0.2, 0.0, 0.0, 1.0);
@@ -64,12 +66,14 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+h1, h2, h3, h4 { margin: 0; font-family: var(--font-serif); font-weight: 600; letter-spacing: -0.005em; color: var(--ink); }
 
 /* Money & quantities always align */
 .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
 button { font-family: inherit; }
+
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; }
 
 ::placeholder { color: var(--faint); }
 
@@ -78,12 +82,12 @@ button { font-family: inherit; }
 /* ---- Buttons -------------------------------------------------------------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
-  height: 38px; padding: 0 var(--s-4);
+  height: 42px; padding: 0 var(--s-5);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink);
-  font-size: var(--text-sm); font-weight: 550;
+  font-size: var(--text-base); font-weight: 600;
   cursor: pointer;
   transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
   white-space: nowrap;
