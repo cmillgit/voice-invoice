@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "voice-invoice",
+  "compatibility_date": "2026-06-14",
+  "observability": { "enabled": true },
+  // Static-asset (SPA) deployment: serve the Vite build from ./dist and fall back
+  // to index.html for client-side routes. This replaces the classic-Pages
+  // _redirects file, which the Workers assets pipeline rejects as an infinite loop.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "compatibility_flags": ["nodejs_compat"]
+}
