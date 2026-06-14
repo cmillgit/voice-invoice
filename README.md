@@ -1,6 +1,6 @@
 # VoiceInvoice
 
-A voice-driven invoicing app for a single tradesperson. Dictate the work; the app
+A voice-driven invoicing app for a single business owner. Dictate the work; the app
 resolves the client, builds a reviewable invoice with deterministic totals, and
 generates a downloadable PDF. See [VISION.md](VISION.md) for the full product vision.
 
