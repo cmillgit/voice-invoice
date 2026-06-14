@@ -60,4 +60,6 @@ automatically on every push to `main` via Git integration.
 **After the first deploy:** set the `ALLOWED_ORIGIN` Edge Function secret to your
 Pages URL to lock CORS to your domain, then redeploy the function.
 
-SPA routing falls back to `index.html` via [`public/_redirects`](public/_redirects).
+Deployment is configured by [`wrangler.jsonc`](wrangler.jsonc) (Workers + Static
+Assets). SPA routing falls back to `index.html` via its
+`not_found_handling: single-page-application` setting.
