@@ -7,10 +7,15 @@
 
 import Anthropic from 'npm:@anthropic-ai/sdk';
 
+// Lock to the deployed frontend origin via the ALLOWED_ORIGIN secret once known
+// (e.g. https://voice-invoice.pages.dev). Defaults to '*' for local dev. Note the
+// function is JWT-verified regardless, so '*' is not an open door — only callers
+// with a valid Supabase session token can invoke it.
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') ?? '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Vary': 'Origin',
 };
 
 const MODEL = Deno.env.get('VOICEINVOICE_MODEL') ?? 'claude-opus-4-8';
