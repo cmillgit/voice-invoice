@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Client, DraftLineItem, InvoiceDraft, RateType } from '../../lib/types';
 import { RATE_TYPES, rateTypeUnit } from '../../lib/types';
 import { listClients } from '../clients/api';
 import { lineAmount, subtotal, invoiceTotal } from '../../lib/calc';
 import { money, todayISO } from '../../lib/format';
 import { approveInvoice } from './api';
+import { runAgentTurn, type Turn } from './agent';
 import { InvoiceDocument } from './InvoiceDocument';
 import { ComposePanel } from './ComposePanel';
 import { CheckIcon, PlusIcon, TrashIcon } from '../../components/icons';
@@ -28,6 +29,21 @@ export function InvoicePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { listClients().then(setClients).catch(() => {}); }, []);
+
+  // Keep a live ref so the async agent turn always sees the latest draft.
+  const draftRef = useRef(draft);
+  useEffect(() => { draftRef.current = draft; }, [draft]);
+
+  async function handleUtterance(utterance: string, conversation: Turn[]): Promise<string> {
+    const { draft: nextDraft, agentMessage } = await runAgentTurn({
+      utterance,
+      conversation,
+      clients,
+      draft: draftRef.current,
+    });
+    setDraft(nextDraft);
+    return agentMessage;
+  }
 
   const selectedClient = clients.find((c) => c.id === draft.client_id) ?? null;
 
@@ -113,10 +129,7 @@ export function InvoicePage() {
         </div>
 
         {/* Voice compose */}
-        <ComposePanel
-          disabled={!!approvedNumber}
-          onApplyParsed={() => { /* step 5: agent fills the draft from the utterance */ }}
-        />
+        <ComposePanel disabled={!!approvedNumber} onUtterance={handleUtterance} />
 
         {/* Client */}
         <div className="field">
