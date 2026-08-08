@@ -10,6 +10,7 @@ const INK = '#211e1a';
 const MUTED = '#6b6358';
 const LINE = '#e4ddd0';
 const ACCENT = '#143f2a';
+const DANGER = '#a23e25';
 
 const s = StyleSheet.create({
   page: { paddingVertical: 54, paddingHorizontal: 54, fontSize: 10, color: INK, fontFamily: 'Helvetica' },
@@ -20,6 +21,7 @@ const s = StyleSheet.create({
   dateValue: { fontSize: 10, marginTop: 3, textAlign: 'right' },
   rule: { borderBottomWidth: 1, borderBottomColor: LINE, marginVertical: 22 },
   label: { fontSize: 8, color: MUTED, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 5 },
+  fromRow: { flexDirection: 'row', justifyContent: 'space-between' },
   clientName: { fontSize: 12, fontFamily: 'Helvetica-Bold' },
   clientLine: { fontSize: 9, color: MUTED, marginTop: 2 },
   // table
@@ -61,11 +63,21 @@ export function InvoicePdf({ invoice }: { invoice: Invoice }) {
 
         <View style={s.rule} />
 
-        <View>
-          <Text style={s.label}>Bill to</Text>
-          <Text style={s.clientName}>{invoice.client_name}</Text>
-          {invoice.client_address ? <Text style={s.clientLine}>{invoice.client_address}</Text> : null}
-          {invoice.client_account_id ? <Text style={s.clientLine}>Account {invoice.client_account_id}</Text> : null}
+        <View style={s.fromRow}>
+          {invoice.business_name ? (
+            <View>
+              <Text style={s.label}>From</Text>
+              <Text style={s.clientName}>{invoice.business_name}</Text>
+              {invoice.business_address ? <Text style={s.clientLine}>{invoice.business_address}</Text> : null}
+              {invoice.business_phone ? <Text style={s.clientLine}>{invoice.business_phone}</Text> : null}
+            </View>
+          ) : <View />}
+          <View style={invoice.business_name ? { alignItems: 'flex-end' } : undefined}>
+            <Text style={s.label}>Bill to</Text>
+            <Text style={s.clientName}>{invoice.client_name}</Text>
+            {invoice.client_address ? <Text style={[s.clientLine, invoice.business_name ? { textAlign: 'right' } : {}]}>{invoice.client_address}</Text> : null}
+            {invoice.client_account_id ? <Text style={s.clientLine}>Account {invoice.client_account_id}</Text> : null}
+          </View>
         </View>
 
         <View style={{ marginTop: 22 }}>
@@ -80,9 +92,9 @@ export function InvoicePdf({ invoice }: { invoice: Invoice }) {
               <View style={s.cDesc}>
                 <Text>{li.description}</Text>
               </View>
-              <Text style={s.cQty}>{qty(li.quantity)} {rateTypeUnit(li.rate_type)}</Text>
-              <Text style={s.cRate}>{money(li.rate_amount)}</Text>
-              <Text style={[s.cAmt, s.amtStrong]}>{money(li.amount)}</Text>
+              <Text style={s.cQty}>{li.is_deduction ? '—' : `${qty(li.quantity)} ${rateTypeUnit(li.rate_type)}`}</Text>
+              <Text style={s.cRate}>{li.is_deduction ? '—' : money(li.rate_amount)}</Text>
+              <Text style={[s.cAmt, s.amtStrong, li.is_deduction ? { color: DANGER } : {}]}>{money(li.amount)}</Text>
             </View>
           ))}
         </View>

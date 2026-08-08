@@ -1,13 +1,17 @@
 import { supabase } from '../../lib/supabase';
 import { nextInvoiceNumber } from '../../lib/invoiceNumber';
-import type { Invoice, InvoiceDraft } from '../../lib/types';
+import type { BusinessProfile, Invoice, InvoiceDraft } from '../../lib/types';
 
 /**
  * Persist an approved invoice. This runs ONLY on explicit user approval (VISION §4.3).
  * Totals are NOT sent from the client — the database computes line amounts (generated
  * column) and invoice subtotal/total (triggers). We write inputs; the DB owns the money.
+ *
+ * `business` is snapshotted onto the row (business_name/address/phone) the same way
+ * client identity is, so a later edit to the business profile never rewrites the
+ * letterhead on an already-issued invoice.
  */
-export async function approveInvoice(draft: InvoiceDraft): Promise<Invoice> {
+export async function approveInvoice(draft: InvoiceDraft, business: BusinessProfile | null): Promise<Invoice> {
   const invoice_number = await nextInvoiceNumber();
 
   const { data: inv, error: invErr } = await supabase
@@ -21,6 +25,9 @@ export async function approveInvoice(draft: InvoiceDraft): Promise<Invoice> {
       client_account_id: draft.client_account_id,
       materials_total: draft.materials_total,
       notes: draft.notes,
+      business_name: business?.name ?? null,
+      business_address: business?.address ?? null,
+      business_phone: business?.phone ?? null,
     })
     .select('*')
     .single();
@@ -37,6 +44,7 @@ export async function approveInvoice(draft: InvoiceDraft): Promise<Invoice> {
         rate_amount: li.rate_amount,
         is_flagged: li.is_flagged ?? false,
         flag_note: li.flag_note ?? null,
+        is_deduction: li.is_deduction ?? false,
       })),
     );
     if (liErr) throw liErr;

@@ -34,3 +34,12 @@ export const CheckIcon = ({ size }: P) => (
 export const FlagIcon = ({ size }: P) => (
   <svg {...base(size)}><path d="M5 21V4M5 4h11l-2 4 2 4H5" /></svg>
 );
+export const ListIcon = ({ size }: P) => (
+  <svg {...base(size)}><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>
+);
+export const SettingsIcon = ({ size }: P) => (
+  <svg {...base(size)}><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></svg>
+);
+export const DownloadIcon = ({ size }: P) => (
+  <svg {...base(size)}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
+);

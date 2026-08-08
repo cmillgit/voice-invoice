@@ -8,14 +8,15 @@
 > **Last updated:** 2026-06-14 · **Phase:** Phase 1 feature-complete, validated against real invoices
 
 > **Build status (2026-06-13):** Phase 1 is built and verified end-to-end — React + Vite + TS app with the
-> design system, email/password auth gate, app shell (Invoice · Clients tabs), full Clients CRUD (rates +
-> synonyms), the invoice flow (live preview, deterministic DB-computed totals, approval → write, date-based
-> numbering), the **voice agent** (JWT-verified Supabase Edge Function `parse-invoice` → Claude with
-> structured outputs; synonym client resolution, DB-sourced rates so the LLM never supplies money,
-> best-guess flagging, conversational corrections, voice+text replies), and **PDF export** (real vector
-> PDF via `@react-pdf/renderer`, lazy-loaded, matching the on-screen template). **Done:** roadmap steps
-> 0–6 — all of phase 1. **Next:** the deferred items in §10 (chiefly email delivery), and pre-production
-> hardening (rotate the shared secrets, enable leaked-password protection). See §10 for decided vs. open.
+> design system, email/password auth gate, app shell (now 4 tabs — New Invoice · Invoices · Clients ·
+> Business), full Clients CRUD (rates + synonyms), the invoice flow (live preview, deterministic
+> DB-computed totals, approval → write, date-based numbering), the **voice agent** (JWT-verified Supabase
+> Edge Function `parse-invoice` → Claude with structured outputs; synonym client resolution, DB-sourced
+> rates so the LLM never supplies money, best-guess flagging, conversational corrections, voice+text
+> replies), and **PDF export** (real vector PDF via `@react-pdf/renderer`, lazy-loaded, matching the
+> on-screen template). **Done:** roadmap steps 0–6 — all of phase 1. **Next:** the deferred items in §10
+> (chiefly email delivery), and pre-production hardening (rotate the shared secrets, enable
+> leaked-password protection). See §10 for decided vs. open.
 
 > **Real-data validation (2026-06-14):** the vision's original mental model — small routine jobs billed
 > against a stored default rate — was built without seeing a real invoice. 6 real invoices from RAM
@@ -24,9 +25,11 @@
 > data deleted). Headline changes: added a third rate type, **`flat`** (single lump-sum job price — half
 > of real invoices use it, and for these clients there is often no stable per-unit default at all); added
 > **holdback/retention deduction lines** (100% of real invoices withhold a flat $ or % until touchup —
-> the schema had no way to represent a negative line amount); added `payment_terms`. See §5 for full
-> findings, including open items (no business "bill-from" identity anywhere in the system; no
-> invoice-history/browse view yet) that are flagged, not yet built.
+> the schema had no way to represent a negative line amount); added `payment_terms`. Three gaps this
+> surfaced were then built out the same day: **business "bill-from" identity** (a `business_profile`
+> table + Business settings tab + a "From" block on the document/PDF, snapshotted per-invoice), an
+> **Invoices history/browse tab**, and a **manual deduction-line toggle** in the line-item editor (voice
+> still never creates one — see §5). See §5 for full findings and what's still open.
 
 ---
 
@@ -248,19 +251,30 @@ real seed data in the database (see §12 for what was deleted).
   must ask rather than invent one — backed by the existing `rate_amount > 0` approval guard, which
   already blocks issuing an invoice with an unresolved $0 line.
 
-**Findings surfaced, not yet built (flagged for a decision, not silently implemented):**
+**Three follow-up gaps, built the same day (2026-06-14, migration `20260614000002_business_identity.sql`
++ frontend):**
 
-- **No business "bill-from" identity anywhere in the system.** There is no stored business name,
-  address, phone, or logo, and the invoice document has no "from" block at all. The real letterhead is
-  also **inconsistent across the father's own invoices** — "RAM Painting and Construction LLC" /
-  "RAM Painting & Construction LLC" / "RAM Painting LLC" all appear. This needs a decision (a settings
-  table? a constant?) and a canonical business name before it's built — see §10.
-- **No invoice-history/browse view.** Once an invoice is approved there is currently no UI to see it
-  again (only the "New Invoice" creation flow exists). The 6 seeded invoices are real database rows but
-  are not yet visible anywhere in the running app.
-- **No manual UI path to create a deduction (holdback) line.** The schema and PDF/document renderer
-  can represent one; the invoice-creation screen's line-item editor cannot create one yet (voice or
-  typed). The 6 historical invoices were seeded directly into the database, not through the app.
+- **Business "bill-from" identity.** New `business_profile` table (one row per user: name, address,
+  phone), a **Business** settings tab to edit it, and a "From" block on both the live document and the
+  PDF, laid out two-column against "Bill to." Snapshotted onto `invoices.business_name/address/phone`
+  at approval time — same record-integrity pattern as client identity — so a later profile edit never
+  rewrites an already-issued invoice's letterhead. **Canonical name decision:** the father's own
+  letterhead is inconsistent across real invoices ("RAM Painting **and** Construction LLC" ×1 /
+  "RAM Painting **&** Construction LLC" ×4 / "RAM Painting LLC" ×1) — seeded the majority variant,
+  **"RAM Painting & Construction LLC,"** as the default; it's editable anytime in Business settings.
+  The 6 historical invoices were backfilled with each one's own **actual printed letterhead** (not the
+  new canonical name), preserving real document accuracy rather than rewriting history.
+- **Invoices history/browse tab.** New **Invoices** tab lists every issued invoice (number, date,
+  client, total); clicking one opens the same `InvoiceDocument` component read-only, with a
+  Download PDF action. This is also how the 6 seeded historical invoices are now visible in the app for
+  the first time.
+- **Manual deduction-line UI.** A per-line-item checkbox ("Deduction (e.g. holdback)") in the
+  invoice-creation screen swaps that line's inputs for a single amount field and stores it as a negative
+  `rate_amount` with `is_deduction=true`. **Voice still never creates a deduction** — deductions remain
+  manual-only by design, so the agent can't invent a withheld amount.
+
+**Other findings (informational, no action taken):**
+
 - **Real invoice numbers are ad hoc, not date-based** (`783`, `RCG101`, `TIM010`, ...) — confirms the
   existing §7 flag that phase-1 numbering is provisional.
 - Two clients (**Noble REH** and **Two Structures Homes**) share one AP mailing address — almost
@@ -417,8 +431,15 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   Multiple line items allowed, mixed rate types within one invoice allowed. Client defaults with
   explicit job-level overrides; **not every client has a default** (flat-priced clients often don't —
   confirmed by real invoices, see §5).
-- **Holdback/retention deduction lines** — validated against real invoicing (§5); not yet manually
-  creatable in the UI (open item below).
+- **Holdback/retention deduction lines** — validated against real invoicing (§5); manually creatable
+  via a per-line checkbox in the invoice-creation screen. **Deductions are manual-only, never
+  voice/agent-produced** — the agent must never invent a withheld amount.
+- **Business "bill-from" identity** — a `business_profile` table (one row per user), a **Business**
+  settings tab, and a "From" block on the document/PDF, snapshotted onto each invoice at approval time
+  (same pattern as client identity). Seeded from the father's real letterhead's majority variant;
+  editable anytime — see §5.
+- **Invoices history/browse tab** — every issued invoice is listed and viewable (reusing the same
+  document component, read-only) with a re-download PDF action.
 - **No tax**, **no email**, **no invoice editing/voiding/versioning** in phase 1.
 - One generic template for preview and final document; fields map cleanly to the DB; line items
   rendered as a **table**.
@@ -449,14 +470,8 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   confirm it's ad hoc (`783`, `RCG101`, `TIM010`), not the date-based scheme phase 1 uses.
 - **Invoice editing / voiding / versioning / corrections** — explicitly out of phase 1; will need an
   immutable-with-corrections design when added.
-- **Business "bill-from" identity** — no stored business name/address/phone/logo anywhere; no "from"
-  block on the document. Needs a canonical business name decided first (the father's own letterhead is
-  inconsistent — see §5) before building a settings surface for it.
-- **Invoice history / browse view** — no UI exists to see a past invoice again after approval.
-- **Manual (typed or voice) creation of a deduction/holdback line** — the schema and document support
-  it (§5); the invoice-creation screen's line-item editor does not yet expose a way to add one.
-- **Letterhead/logo, PO numbers, distinct service date** on the document. (`payment_terms` is now
-  decided/shipped — see above.)
+- **Business logo, PO numbers, distinct service date** on the document. (Business name/address/phone
+  and `payment_terms` are now decided/shipped — see above.)
 - **Rate-config schema** — the *approach* is decided (structured parameters, no stored executable
   SQL — see §5); the exact table/column shape is an architecture-session task.
 - **Synonym schema** — the *scope* is decided (client identity + job/work types + rate language); the
