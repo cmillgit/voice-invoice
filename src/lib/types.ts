@@ -1,11 +1,14 @@
-// Domain types — mirror the DB schema (supabase/migrations/20260613000001_init_schema.sql).
-// Keep in sync with the database; these are the contract the UI builds against.
+// Domain types — mirror the DB schema (supabase/migrations/). Keep in sync with the
+// database; these are the contract the UI builds against.
 
-export type RateType = 'hourly' | 'per_sqft';
+// 'flat' added 2026-06-14 after reviewing 6 real invoices: half of them bill a single
+// lump-sum job price (not hourly, not per-sqft) — see supabase/migrations/20260614000001.
+export type RateType = 'hourly' | 'per_sqft' | 'flat';
 
 export const RATE_TYPES: { value: RateType; label: string; unit: string }[] = [
   { value: 'hourly', label: 'Hourly', unit: 'hr' },
   { value: 'per_sqft', label: 'Per sq ft', unit: 'sq ft' },
+  { value: 'flat', label: 'Flat / per job', unit: 'job' },
 ];
 
 export function rateTypeLabel(t: RateType): string {
