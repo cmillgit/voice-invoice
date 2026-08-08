@@ -1,18 +1,20 @@
-// VoiceInvoice wordmark — angular mark + restrained type, per the design language.
+// VoiceInvoice wordmark — the RAM Painting & Construction ram-head mark, stacked above
+// the app's own name. The ram head is the real business's mark (see VISION §5); the app
+// keeps its own name/color treatment beneath it, since VoiceInvoice is the tool, not the
+// business's brand.
+
+import ramMark from '../assets/ram-mark.png';
 
 export function Wordmark({ compact = false }: { compact?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)' }}>
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-        <rect x="0.5" y="0.5" width="25" height="25" rx="3.5" stroke="var(--accent)" />
-        {/* angular "soundwave" bars */}
-        <rect x="6" y="11" width="2.5" height="4" fill="var(--accent)" />
-        <rect x="10" y="8" width="2.5" height="10" fill="var(--accent)" />
-        <rect x="14" y="6" width="2.5" height="14" fill="var(--accent)" />
-        <rect x="18" y="10" width="2.5" height="6" fill="var(--accent)" />
-      </svg>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: compact ? 0 : 'var(--s-2)' }}>
+      <img
+        src={ramMark}
+        alt="RAM Painting & Construction"
+        style={{ width: compact ? 32 : 52, height: 'auto', display: 'block' }}
+      />
       {!compact && (
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-lg)', fontWeight: 600, letterSpacing: '-0.01em' }}>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em' }}>
           Voice<span style={{ color: 'var(--accent)' }}>Invoice</span>
         </span>
       )}

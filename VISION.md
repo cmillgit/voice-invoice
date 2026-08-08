@@ -40,6 +40,13 @@
 > addresses** (`clients.emails`, data-capture only — no send feature yet). See §5 and §7 for details,
 > §10 for what's still open.
 
+> **Real logo (2026-06-14, same day):** the father's actual ram-head mark for RAM Painting &
+> Construction replaced the app's original placeholder soundwave-bars identity everywhere — favicon
+> (ram head alone), app sidebar/login (ram head + "VoiceInvoice"), and the invoice document/PDF (full
+> lockup — ram head + "RAM PAINTING" + phone — top-center, replacing the old text-only "From" block).
+> See §5 for asset-processing details and §7 for the resulting document layout, including the dropped
+> business-street-address display (open item if wanted back).
+
 ---
 
 ## 1. The user
@@ -292,6 +299,24 @@ there's no money-safety reason to restrict it to manual entry. Also replaced the
 payable to `{business name}`" / "Thank you for your business!"), and added `clients.emails`
 (migration `20260614000004_client_emails.sql`) — data capture only, no send feature.
 
+**Real logo (2026-06-14, later still same day):** the father supplied a finished ram-head mark for
+RAM Painting & Construction — flat 2D, black, geometric — replacing the app's original placeholder
+soundwave-bars identity everywhere. Three distinct treatments, per explicit direction:
+- **Favicon** — ram head only.
+- **App sidebar / login** (`Wordmark.tsx`) — ram head stacked above "VoiceInvoice" (the app's own
+  name/color stay; only the icon changed — VoiceInvoice is the tool, not the business's brand).
+- **Invoice document + PDF** — the full lockup (ram head + "RAM PAINTING" + phone), top-center,
+  replacing the old text-only two-column "From" block entirely (see §7 for the resulting layout and
+  the note on what this means for the "generic template" principle).
+
+The supplied asset was a raster image (1024×1024 PNG) embedded in an SVG wrapper, not hand-vectorized
+paths — extracted, background removed (was opaque white, needed transparency to sit on colored
+surfaces), trimmed, and saved as `src/assets/ram-mark.png` (in-app) and `public/favicon.png` (256×256).
+Confirmed it holds up down to 16px favicon scale before shipping it. An earlier attempt to hand-draw
+ram-head concepts via SVG path data (for user review, not shipped) failed — freehand illustrative SVG
+is a known weak point (see the "best tools for SVG logos" discussion this session); the real asset the
+father provided is what's actually in the app.
+
 **Other findings (informational, no action taken):**
 
 - **Real invoice numbers are ad hoc, not date-based** (`783`, `RCG101`, `TIM010`, ...) — confirms the
@@ -350,12 +375,19 @@ structured rows.
 
 Document fields are designed at product level here; **the binding requirement is that every field on
 the document maps cleanly to a backend database field** (no display-only data that can't be traced to
-a record). Layout finalized 2026-06-14 against real invoices (top to bottom):
+a record). Layout finalized 2026-06-14, revised same day once a real logo existed (top to bottom):
 
-- **Invoice number** (assigned on approval — see numbering below) and **issue date**.
-- **From / Bill to**, two-column: business identity (name, address, phone — from `business_profile`,
-  snapshotted per invoice, see §10) on the left; client identity (name, address, account ID) on the
-  right.
+- **Logo header, top-center** — the RAM Painting & Construction ram-head mark, "RAM PAINTING"
+  wordmark, and business phone (from `business_profile.phone`, snapshotted per invoice). The mark and
+  wordmark text are a **fixed brand lockup** hardcoded into the template (not derived from
+  `business_profile.name`, which is the fuller legal name — see below); this is a deliberate,
+  scoped-to-reality simplification, not a reversal of the "generic template" principle — see the note
+  below.
+- **Invoice number** (assigned on approval — see numbering below) and **issue date**, below the logo.
+- **Bill to** — client identity (name, address, account ID). Business identity moved into the logo
+  header above, so this is no longer a two-column "From / Bill to" row — just Bill To, standalone.
+  Business street address is intentionally **not shown** on the document (only name/phone, via the
+  logo header) — open item if that's wanted back.
 - **Job / project** — a short label or site address, centered, above the line-item table. A real
   first-class field (`invoices.job_label`), distinct from freeform notes — see §5.
 - **Line items table** — the cost flow, shown as a table so it's easy to scan:
@@ -364,12 +396,20 @@ a record). Layout finalized 2026-06-14 against real invoices (top to bottom):
 - **Materials** — lump-sum line. **Subtotal. Total.**
 - **Notes** — genuine freeform remarks only, shown if present (rare in practice — the job identifier
   now has its own field above).
-- **Footer** — "Make all checks payable to `{business name}`" / "Thank you for your business!",
-  matching the father's real invoices. Shown only once a business profile exists; no product
+- **Footer** — "Make all checks payable to `{business name}`" / "Thank you for your business!", using
+  the full legal `business_profile.name` (accuracy matters here — it's a financial instruction —
+  unlike the logo header's simplified wordmark). Shown only once a business profile exists; no product
   self-branding ("Generated by VoiceInvoice") on a client-facing document.
 
-No tax line in phase 1. Logo, PO numbers, and a distinct service-vs-issue date are **not** in phase 1
-but are natural future additions — design fields so they can be added without reshaping the document.
+**Note on the "generic template" principle (§7 Template, above):** the logo header hardcodes RAM
+Painting's actual mark and wordmark text into what the codebase calls "one generic VoiceInvoice
+template." This is intentional, not a quiet reversal — the app is single-user/single-business in
+practice (§10), so the "generic" template already only ever renders one real business's data; the logo
+header just makes that same reality visible instead of staying business-name-agnostic. Per-client
+templates remain the deferred future item if that ever needs to generalize.
+
+No tax line in phase 1. PO numbers and a distinct service-vs-issue date are **not** in phase 1 but are
+natural future additions — design fields so they can be added without reshaping the document.
 (`payment_terms` is captured on the invoice record but not yet placed on the document — open item.)
 
 ### Numbering
@@ -461,9 +501,10 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   via a per-line checkbox in the invoice-creation screen. **Deductions are manual-only, never
   voice/agent-produced** — the agent must never invent a withheld amount.
 - **Business "bill-from" identity** — a `business_profile` table (one row per user), a **Business**
-  settings tab, and a "From" block on the document/PDF, snapshotted onto each invoice at approval time
-  (same pattern as client identity). Seeded from the father's real letterhead's majority variant;
-  editable anytime — see §5.
+  settings tab, and (as of 2026-06-14, same day) a **real ram-head logo** replacing the old
+  soundwave-bars app mark and the old text-only "From" block, shown top-center on the document/PDF
+  with "RAM PAINTING" + phone. Business phone snapshotted onto each invoice at approval time (same
+  pattern as client identity). See §5 and §7.
 - **Invoices history/browse tab** — every issued invoice is listed and viewable (reusing the same
   document component, read-only) with a re-download PDF action.
 - **Job / project is a first-class field** (`invoices.job_label`), separate from freeform `notes`.
@@ -506,8 +547,11 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   confirm it's ad hoc (`783`, `RCG101`, `TIM010`), not the date-based scheme phase 1 uses.
 - **Invoice editing / voiding / versioning / corrections** — explicitly out of phase 1; will need an
   immutable-with-corrections design when added.
-- **Business logo, PO numbers, distinct service date** on the document. (Business name/address/phone
-  are now decided/shipped — see above.)
+- **PO numbers, distinct service date** on the document. (Business identity, including a real logo,
+  is now decided/shipped — see above and §5.)
+- **Business street address is no longer shown on the document** — the new logo header (§7) only
+  carries name + phone; dropping the address was a deliberate scope call when the header was built,
+  not an oversight. Revisit if the address needs to be visible again.
 - **`payment_terms` is captured (schema + historical backfill) but not yet surfaced anywhere** — no
   field in the compose form, so new invoices never set it, and it isn't rendered on the document even
   when present. This was an inaccurate "decided/shipped" claim in an earlier version of this doc,

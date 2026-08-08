@@ -1,7 +1,8 @@
-import { Document, Page, View, Text, StyleSheet, pdf } from '@react-pdf/renderer';
+import { Document, Page, View, Text, Image, StyleSheet, pdf } from '@react-pdf/renderer';
 import type { Invoice } from '../../lib/types';
 import { rateTypeUnit } from '../../lib/types';
 import { money, qty, formatDate } from '../../lib/format';
+import ramMark from '../../assets/ram-mark.png';
 
 // One generic template (VISION §7), mirroring the on-screen InvoiceDocument.
 // Real vector PDF — selectable text, crisp at any zoom.
@@ -14,14 +15,16 @@ const DANGER = '#a23e25';
 
 const s = StyleSheet.create({
   page: { paddingVertical: 54, paddingHorizontal: 54, fontSize: 10, color: INK, fontFamily: 'Helvetica' },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  title: { fontSize: 28, fontFamily: 'Times-Bold', letterSpacing: -0.5 },
-  number: { marginTop: 6, fontSize: 10, color: ACCENT, fontFamily: 'Helvetica-Bold' },
+  logoBlock: { alignItems: 'center' },
+  logoMark: { height: 58, width: 'auto' },
+  logoName: { fontSize: 16, fontFamily: 'Times-Bold', letterSpacing: 1, marginTop: 8 },
+  logoPhone: { fontSize: 9, color: MUTED, marginTop: 2 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 24 },
+  number: { fontSize: 10, color: ACCENT, fontFamily: 'Helvetica-Bold' },
   dateLabel: { fontSize: 8, color: MUTED, letterSpacing: 0.6, textTransform: 'uppercase', textAlign: 'right' },
   dateValue: { fontSize: 10, marginTop: 3, textAlign: 'right' },
   rule: { borderBottomWidth: 1, borderBottomColor: LINE, marginVertical: 22 },
   label: { fontSize: 8, color: MUTED, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 5 },
-  fromRow: { flexDirection: 'row', justifyContent: 'space-between' },
   clientName: { fontSize: 12, fontFamily: 'Helvetica-Bold' },
   clientLine: { fontSize: 9, color: MUTED, marginTop: 2 },
   jobBlock: { marginTop: 24, alignItems: 'center' },
@@ -53,9 +56,18 @@ export function InvoicePdf({ invoice }: { invoice: Invoice }) {
   return (
     <Document title={`Invoice ${invoice.invoice_number}`}>
       <Page size="LETTER" style={s.page}>
+        {/* Logo header — RAM Painting & Construction mark, top-center. Wordmark text is
+            the fixed brand lockup (not business_name, the fuller legal name used in the
+            footer); phone is the live business phone. */}
+        <View style={s.logoBlock}>
+          <Image src={ramMark} style={s.logoMark} />
+          <Text style={s.logoName}>RAM PAINTING</Text>
+          {invoice.business_phone ? <Text style={s.logoPhone}>{invoice.business_phone}</Text> : null}
+        </View>
+
         <View style={s.headerRow}>
           <View>
-            <Text style={s.title}>Invoice</Text>
+            <Text style={s.label}>Invoice</Text>
             <Text style={s.number}>#{invoice.invoice_number}</Text>
           </View>
           <View>
@@ -66,21 +78,11 @@ export function InvoicePdf({ invoice }: { invoice: Invoice }) {
 
         <View style={s.rule} />
 
-        <View style={s.fromRow}>
-          {invoice.business_name ? (
-            <View>
-              <Text style={s.label}>From</Text>
-              <Text style={s.clientName}>{invoice.business_name}</Text>
-              {invoice.business_address ? <Text style={s.clientLine}>{invoice.business_address}</Text> : null}
-              {invoice.business_phone ? <Text style={s.clientLine}>{invoice.business_phone}</Text> : null}
-            </View>
-          ) : <View />}
-          <View style={invoice.business_name ? { alignItems: 'flex-end' } : undefined}>
-            <Text style={s.label}>Bill to</Text>
-            <Text style={s.clientName}>{invoice.client_name}</Text>
-            {invoice.client_address ? <Text style={[s.clientLine, invoice.business_name ? { textAlign: 'right' } : {}]}>{invoice.client_address}</Text> : null}
-            {invoice.client_account_id ? <Text style={s.clientLine}>Account {invoice.client_account_id}</Text> : null}
-          </View>
+        <View>
+          <Text style={s.label}>Bill to</Text>
+          <Text style={s.clientName}>{invoice.client_name}</Text>
+          {invoice.client_address ? <Text style={s.clientLine}>{invoice.client_address}</Text> : null}
+          {invoice.client_account_id ? <Text style={s.clientLine}>Account {invoice.client_account_id}</Text> : null}
         </View>
 
         {invoice.job_label ? (
