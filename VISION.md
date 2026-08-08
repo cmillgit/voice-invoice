@@ -5,7 +5,7 @@
 > this document is updated in the same session that changes it. Treat its accuracy as a maintained
 > invariant, not a one-time output.
 >
-> **Last updated:** 2026-06-13 · **Phase:** Phase 1 feature-complete
+> **Last updated:** 2026-06-14 · **Phase:** Phase 1 feature-complete, validated against real invoices
 
 > **Build status (2026-06-13):** Phase 1 is built and verified end-to-end — React + Vite + TS app with the
 > design system, email/password auth gate, app shell (Invoice · Clients tabs), full Clients CRUD (rates +
@@ -16,6 +16,17 @@
 > PDF via `@react-pdf/renderer`, lazy-loaded, matching the on-screen template). **Done:** roadmap steps
 > 0–6 — all of phase 1. **Next:** the deferred items in §10 (chiefly email delivery), and pre-production
 > hardening (rotate the shared secrets, enable leaked-password protection). See §10 for decided vs. open.
+
+> **Real-data validation (2026-06-14):** the vision's original mental model — small routine jobs billed
+> against a stored default rate — was built without seeing a real invoice. 6 real invoices from RAM
+> Painting & Construction LLC (the father's actual business) were reviewed; the schema and agent were
+> updated to fit. All 6 clients and invoices are now seeded as real production data (all prior test/dummy
+> data deleted). Headline changes: added a third rate type, **`flat`** (single lump-sum job price — half
+> of real invoices use it, and for these clients there is often no stable per-unit default at all); added
+> **holdback/retention deduction lines** (100% of real invoices withhold a flat $ or % until touchup —
+> the schema had no way to represent a negative line amount); added `payment_terms`. See §5 for full
+> findings, including open items (no business "bill-from" identity anywhere in the system; no
+> invoice-history/browse view yet) that are flagged, not yet built.
 
 ---
 
@@ -169,10 +180,14 @@ quantities, which rate applies); the backend turns those inputs into money.
 
 - **Hourly** — quantity (hours) × hourly rate.
 - **Per square foot** — quantity (sq ft) × rate per sq ft.
+- **Flat / per job** — a single lump-sum price for the whole job (quantity 1). **Added 2026-06-14**
+  after reviewing real invoices — half of them price this way, with no per-unit rate at all.
 - **Materials** — added as a **lump-sum cost category** (not itemized, not marked up in phase 1).
 
-A single invoice may contain **multiple line items**. (Genuinely *mixed* multi-structure invoices,
-per-job flat rates, and tiered rates are **planned but deferred** — see §9.)
+A single invoice may contain **multiple line items**, and a single invoice may **mix rate types across
+its lines** (e.g. a per-sq-ft service line plus a flat holdback deduction — this is normal, not the
+deferred "mixed multi-structure" case below, which refers to a future *tiered* structure). Tiered rates
+remain **planned but deferred** — see §9.
 
 ### Defaults vs. overrides
 
@@ -209,6 +224,53 @@ choosing one on purpose:
 This preserves the builder's "deterministic SQL math" intent while keeping client rate config as data.
 The exact schema is still an architecture-session task; **the constraint is: no stored executable SQL
 / no string-eval of per-client formulas.** (See §10.)
+
+### Real invoice findings (2026-06-14)
+
+6 real invoices from **RAM Painting & Construction LLC** (the father's actual business — an Oklahoma
+City painting contractor doing large jobs for home builders/property groups, not routine small jobs)
+were reviewed to check the schema and agent against reality. All 6 clients and invoices are now the
+real seed data in the database (see §12 for what was deleted).
+
+**What changed (shipped same session):**
+
+- **Added `flat` rate type.** 3 of 6 invoices bill a single negotiated job price
+  ($2,750–$14,009), not a per-unit rate. Migration `20260614000001_flat_rate_and_deductions.sql`.
+- **Added holdback/retention deduction lines.** Construction-industry standard: the builder withholds
+  a flat $ or % (10% in one case) from every invoice until touchup/punch-list work is done — **100% of
+  the 6 real invoices had one.** `invoice_line_items` gained `is_deduction boolean`, and the
+  `rate_amount >= 0` check now reads `is_deduction or rate_amount >= 0` — normal service lines still
+  can't go negative, only explicitly-flagged deduction lines can.
+- **Added `invoices.payment_terms`** (free text — "Due on receipt", "NET 5"). Present on all 6.
+- **Agent + frontend types updated** to match: `parse-invoice`'s schema/system prompt and
+  `src/lib/types.ts` both now know about `flat`. The agent is explicitly told that many clients have
+  **no stored default rate at all** (normal for flat-priced clients, whose price is bid per job) and
+  must ask rather than invent one — backed by the existing `rate_amount > 0` approval guard, which
+  already blocks issuing an invoice with an unresolved $0 line.
+
+**Findings surfaced, not yet built (flagged for a decision, not silently implemented):**
+
+- **No business "bill-from" identity anywhere in the system.** There is no stored business name,
+  address, phone, or logo, and the invoice document has no "from" block at all. The real letterhead is
+  also **inconsistent across the father's own invoices** — "RAM Painting and Construction LLC" /
+  "RAM Painting & Construction LLC" / "RAM Painting LLC" all appear. This needs a decision (a settings
+  table? a constant?) and a canonical business name before it's built — see §10.
+- **No invoice-history/browse view.** Once an invoice is approved there is currently no UI to see it
+  again (only the "New Invoice" creation flow exists). The 6 seeded invoices are real database rows but
+  are not yet visible anywhere in the running app.
+- **No manual UI path to create a deduction (holdback) line.** The schema and PDF/document renderer
+  can represent one; the invoice-creation screen's line-item editor cannot create one yet (voice or
+  typed). The 6 historical invoices were seeded directly into the database, not through the app.
+- **Real invoice numbers are ad hoc, not date-based** (`783`, `RCG101`, `TIM010`, ...) — confirms the
+  existing §7 flag that phase-1 numbering is provisional.
+- Two clients (**Noble REH** and **Two Structures Homes**) share one AP mailing address — almost
+  certainly a shared accounting/bookkeeping firm handling payables for both — stored as two distinct
+  clients per their distinct company names and customer IDs, which is correct.
+- One source invoice (Coldwater Creek Homes, `CLD147`) has a **$0.50 internal arithmetic inconsistency**
+  (printed unit price × quantity doesn't exactly match its own printed line total). The seeded record
+  uses the correctly-computed value (qty × rate, deterministically) rather than replicating the
+  original's rounding slip; the $0.50 difference is intentional and documented here, not a data-entry
+  error on our side.
 
 ---
 
@@ -351,8 +413,12 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
 - **Live document preview is the approval terminal**; approval is a **user button press** that writes
   the record and assigns the ID.
 - Deterministic backend calculation; LLM never produces billed numbers.
-- Phase-1 rates: **hourly**, **per square foot**, **materials as lump sum**. Multiple line items
-  allowed. Client defaults with explicit job-level overrides.
+- Phase-1 rates: **hourly**, **per square foot**, **flat/per-job**, **materials as lump sum**.
+  Multiple line items allowed, mixed rate types within one invoice allowed. Client defaults with
+  explicit job-level overrides; **not every client has a default** (flat-priced clients often don't —
+  confirmed by real invoices, see §5).
+- **Holdback/retention deduction lines** — validated against real invoicing (§5); not yet manually
+  creatable in the UI (open item below).
 - **No tax**, **no email**, **no invoice editing/voiding/versioning** in phase 1.
 - One generic template for preview and final document; fields map cleanly to the DB; line items
   rendered as a **table**.
@@ -374,15 +440,23 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
 
 - **Email delivery** of the PDF (from-address, body, sender copy, bounce/wrong-recipient handling,
   recall/reissue) — future phase.
-- **Additional rate structures:** per-job flat, tiered (graduated vs. cliff — must be specified when
-  built), genuinely mixed multi-structure invoices.
+- **Additional rate structures:** tiered (graduated vs. cliff — must be specified when built). (Flat
+  is now decided/shipped — see above.)
 - **Materials markup** and itemized materials.
 - **Tax.**
 - **Per-client / branded invoice templates.**
-- **Invoice numbering scheme** — replace with the father's real-world convention.
+- **Invoice numbering scheme** — replace with the father's real-world convention. Real invoices
+  confirm it's ad hoc (`783`, `RCG101`, `TIM010`), not the date-based scheme phase 1 uses.
 - **Invoice editing / voiding / versioning / corrections** — explicitly out of phase 1; will need an
   immutable-with-corrections design when added.
-- **Letterhead/logo, PO numbers, payment terms, distinct service date** on the document.
+- **Business "bill-from" identity** — no stored business name/address/phone/logo anywhere; no "from"
+  block on the document. Needs a canonical business name decided first (the father's own letterhead is
+  inconsistent — see §5) before building a settings surface for it.
+- **Invoice history / browse view** — no UI exists to see a past invoice again after approval.
+- **Manual (typed or voice) creation of a deduction/holdback line** — the schema and document support
+  it (§5); the invoice-creation screen's line-item editor does not yet expose a way to add one.
+- **Letterhead/logo, PO numbers, distinct service date** on the document. (`payment_terms` is now
+  decided/shipped — see above.)
 - **Rate-config schema** — the *approach* is decided (structured parameters, no stored executable
   SQL — see §5); the exact table/column shape is an architecture-session task.
 - **Synonym schema** — the *scope* is decided (client identity + job/work types + rate language); the
@@ -413,3 +487,10 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   has table grants; functions are `search_path`-hardened.
 - **Security follow-ups (not blocking):** the plaintext secrets in the kickoff doc (DB password +
   `sb_secret_…`) should be rotated; enable Supabase Auth leaked-password protection in the dashboard.
+- **Test/dummy data replaced with real production data (2026-06-14).** All clients and invoices that
+  existed before this date were synthetic (created while building/testing, e.g. "Acme Property Group,"
+  "Bomboclatt Group LLC") and were **deleted** — every one, including one, "Timbercraft Homes LLC,"
+  that coincidentally shared a name with a real client but had a fake account ID. The database now
+  holds 6 real clients and 6 real invoices sourced directly from RAM Painting & Construction LLC
+  invoice PDFs. See §5 → *Real invoice findings* for the schema changes this required and what's
+  still open.
