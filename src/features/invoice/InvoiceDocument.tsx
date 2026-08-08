@@ -2,6 +2,7 @@ import type { RateType } from '../../lib/types';
 import { rateTypeUnit } from '../../lib/types';
 import { money, qty, formatDate } from '../../lib/format';
 import { FlagIcon } from '../../components/icons';
+import ramMark from '../../assets/ram-mark.png';
 
 export interface DocLineItem {
   description: string;
@@ -52,11 +53,24 @@ export function InvoiceDocument(props: DocProps) {
         gap: 'var(--s-6)',
       }}
     >
-      {/* Header */}
+      {/* Logo header — the RAM Painting & Construction mark, top-center. The wordmark
+          text is the fixed brand lockup (not derived from business_profile.name, which
+          is the fuller legal name used in the footer); phone is the live business phone. */}
+      <div style={{ textAlign: 'center' }}>
+        <img src={ramMark} alt="RAM Painting & Construction" style={{ height: 76, width: 'auto', margin: '0 auto' }} />
+        <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 'var(--text-lg)', letterSpacing: '0.02em', marginTop: 'var(--s-2)' }}>
+          RAM PAINTING
+        </div>
+        {props.businessPhone && (
+          <div className="muted tnum" style={{ fontSize: 'var(--text-sm)', marginTop: 2 }}>{props.businessPhone}</div>
+        )}
+      </div>
+
+      {/* Invoice number / issue date */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-2xl)', fontWeight: 600, letterSpacing: '-0.02em' }}>Invoice</div>
-          <div className="mono" style={{ marginTop: 6, color: draft ? 'var(--faint)' : 'var(--accent-ink)', fontWeight: 600 }}>
+          <div className="label" style={{ marginBottom: 4 }}>Invoice</div>
+          <div className="mono" style={{ color: draft ? 'var(--faint)' : 'var(--accent-ink)', fontWeight: 600 }}>
             {draft ? 'DRAFT — not yet issued' : `#${props.number}`}
           </div>
         </div>
@@ -68,42 +82,26 @@ export function InvoiceDocument(props: DocProps) {
 
       <hr className="divider" />
 
-      {/* From / Bill to */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s-6)' }}>
-        {props.businessName && (
-          <div>
-            <div className="label" style={{ marginBottom: 6 }}>From</div>
-            <div style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>{props.businessName}</div>
-            {props.businessAddress && (
+      {/* Bill to */}
+      <div>
+        <div className="label" style={{ marginBottom: 6 }}>Bill to</div>
+        {props.clientName ? (
+          <>
+            <div style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>{props.clientName}</div>
+            {props.clientAddress && (
               <div className="muted" style={{ whiteSpace: 'pre-line', fontSize: 'var(--text-sm)', marginTop: 2 }}>
-                {props.businessAddress}
+                {props.clientAddress}
               </div>
             )}
-            {props.businessPhone && (
-              <div className="muted" style={{ fontSize: 'var(--text-sm)', marginTop: 2 }}>{props.businessPhone}</div>
+            {props.clientAccountId && (
+              <div className="muted mono" style={{ fontSize: 'var(--text-xs)', marginTop: 4 }}>
+                Account {props.clientAccountId}
+              </div>
             )}
-          </div>
+          </>
+        ) : (
+          <div className="muted">No client selected</div>
         )}
-        <div style={{ textAlign: props.businessName ? 'right' : 'left' }}>
-          <div className="label" style={{ marginBottom: 6 }}>Bill to</div>
-          {props.clientName ? (
-            <>
-              <div style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>{props.clientName}</div>
-              {props.clientAddress && (
-                <div className="muted" style={{ whiteSpace: 'pre-line', fontSize: 'var(--text-sm)', marginTop: 2 }}>
-                  {props.clientAddress}
-                </div>
-              )}
-              {props.clientAccountId && (
-                <div className="muted mono" style={{ fontSize: 'var(--text-xs)', marginTop: 4 }}>
-                  Account {props.clientAccountId}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="muted">No client selected</div>
-          )}
-        </div>
       </div>
 
       {props.jobLabel && (
