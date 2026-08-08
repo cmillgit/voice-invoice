@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react';
 import { Wordmark } from './Wordmark';
-import { FileIcon, UsersIcon } from './icons';
+import { FileIcon, ListIcon, SettingsIcon, UsersIcon } from './icons';
 import { useAuth } from '../auth/AuthProvider';
 
-export type Tab = 'invoice' | 'clients';
+export type Tab = 'invoice' | 'history' | 'clients' | 'business';
 
 const NAV: { id: Tab; label: string; icon: ReactNode }[] = [
   { id: 'invoice', label: 'New Invoice', icon: <FileIcon size={17} /> },
+  { id: 'history', label: 'Invoices', icon: <ListIcon size={17} /> },
   { id: 'clients', label: 'Clients', icon: <UsersIcon size={17} /> },
+  { id: 'business', label: 'Business', icon: <SettingsIcon size={17} /> },
 ];
 
 export function AppShell({

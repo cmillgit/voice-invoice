@@ -15,6 +15,7 @@ export function ClientForm({ initial, onCancel, onSave }: Props) {
   const [address, setAddress] = useState(initial?.address ?? '');
   const [accountId, setAccountId] = useState(initial?.account_id ?? '');
   const [synonyms, setSynonyms] = useState((initial?.synonyms ?? []).join(', '));
+  const [emails, setEmails] = useState((initial?.emails ?? []).join(', '));
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [rates, setRates] = useState<RateInput[]>(
     (initial?.client_rates ?? []).map((r) => ({
@@ -45,6 +46,9 @@ export function ClientForm({ initial, onCancel, onSave }: Props) {
     if (!name.trim()) { setError('Client name is required.'); return; }
     if (rates.some((r) => r.rate_amount <= 0)) { setError('Every rate needs an amount greater than 0.'); return; }
     if (rates.length > 0 && !rates.some((r) => r.is_default)) { setError('Mark one rate as the default.'); return; }
+    const emailList = emails.split(',').map((s) => s.trim()).filter(Boolean);
+    const badEmail = emailList.find((e) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    if (badEmail) { setError(`"${badEmail}" doesn't look like a valid email address.`); return; }
     setBusy(true);
     setError(null);
     try {
@@ -53,6 +57,7 @@ export function ClientForm({ initial, onCancel, onSave }: Props) {
         address: address.trim() || null,
         account_id: accountId.trim() || null,
         synonyms: synonyms.split(',').map((s) => s.trim()).filter(Boolean),
+        emails: emailList,
         notes: notes.trim() || null,
         rates,
       });
@@ -92,6 +97,14 @@ export function ClientForm({ initial, onCancel, onSave }: Props) {
               <input className="input" value={synonyms} onChange={(e) => setSynonyms(e.target.value)}
                 placeholder="e.g. Johnson account, the warehouse" />
             </div>
+          </div>
+          <div className="field">
+            <label className="label">Emails (comma-separated)</label>
+            <input className="input" value={emails} onChange={(e) => setEmails(e.target.value)}
+              placeholder="e.g. ap@client.com, pm@client.com" />
+            <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>
+              Where an invoice would be sent. Not wired up to send yet.
+            </span>
           </div>
           <div className="field">
             <label className="label">Address</label>

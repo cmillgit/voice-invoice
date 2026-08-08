@@ -11,11 +11,15 @@ export interface DocLineItem {
   amount: number;
   is_flagged?: boolean;
   flag_note?: string | null;
+  is_deduction?: boolean;
 }
 
 export interface DocProps {
   number: string | null; // null → DRAFT
   issueDate: string;
+  businessName?: string | null;
+  businessAddress?: string | null;
+  businessPhone?: string | null;
   clientName: string;
   clientAddress: string | null;
   clientAccountId: string | null;
@@ -23,6 +27,7 @@ export interface DocProps {
   materialsTotal: number;
   subtotal: number;
   total: number;
+  jobLabel?: string | null;
   notes: string | null;
 }
 
@@ -63,27 +68,50 @@ export function InvoiceDocument(props: DocProps) {
 
       <hr className="divider" />
 
-      {/* Bill to */}
-      <div>
-        <div className="label" style={{ marginBottom: 6 }}>Bill to</div>
-        {props.clientName ? (
-          <>
-            <div style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>{props.clientName}</div>
-            {props.clientAddress && (
+      {/* From / Bill to */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s-6)' }}>
+        {props.businessName && (
+          <div>
+            <div className="label" style={{ marginBottom: 6 }}>From</div>
+            <div style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>{props.businessName}</div>
+            {props.businessAddress && (
               <div className="muted" style={{ whiteSpace: 'pre-line', fontSize: 'var(--text-sm)', marginTop: 2 }}>
-                {props.clientAddress}
+                {props.businessAddress}
               </div>
             )}
-            {props.clientAccountId && (
-              <div className="muted mono" style={{ fontSize: 'var(--text-xs)', marginTop: 4 }}>
-                Account {props.clientAccountId}
-              </div>
+            {props.businessPhone && (
+              <div className="muted" style={{ fontSize: 'var(--text-sm)', marginTop: 2 }}>{props.businessPhone}</div>
             )}
-          </>
-        ) : (
-          <div className="muted">No client selected</div>
+          </div>
         )}
+        <div style={{ textAlign: props.businessName ? 'right' : 'left' }}>
+          <div className="label" style={{ marginBottom: 6 }}>Bill to</div>
+          {props.clientName ? (
+            <>
+              <div style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>{props.clientName}</div>
+              {props.clientAddress && (
+                <div className="muted" style={{ whiteSpace: 'pre-line', fontSize: 'var(--text-sm)', marginTop: 2 }}>
+                  {props.clientAddress}
+                </div>
+              )}
+              {props.clientAccountId && (
+                <div className="muted mono" style={{ fontSize: 'var(--text-xs)', marginTop: 4 }}>
+                  Account {props.clientAccountId}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="muted">No client selected</div>
+          )}
+        </div>
       </div>
+
+      {props.jobLabel && (
+        <div style={{ textAlign: 'center' }}>
+          <div className="label" style={{ marginBottom: 4 }}>Job</div>
+          <div style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>{props.jobLabel}</div>
+        </div>
+      )}
 
       {/* Line items table */}
       <table className="table">
@@ -113,9 +141,11 @@ export function InvoiceDocument(props: DocProps) {
                     )}
                   </div>
                 </td>
-                <td className="num tnum">{qty(li.quantity)} {rateTypeUnit(li.rate_type)}</td>
-                <td className="num tnum">{money(li.rate_amount)}</td>
-                <td className="num tnum" style={{ fontWeight: 600 }}>{money(li.amount)}</td>
+                <td className="num tnum">{li.is_deduction ? '—' : `${qty(li.quantity)} ${rateTypeUnit(li.rate_type)}`}</td>
+                <td className="num tnum">{li.is_deduction ? '—' : money(li.rate_amount)}</td>
+                <td className="num tnum" style={{ fontWeight: 600, color: li.is_deduction ? 'var(--danger)' : undefined }}>
+                  {money(li.amount)}
+                </td>
               </tr>
             ))
           )}
@@ -139,6 +169,20 @@ export function InvoiceDocument(props: DocProps) {
           <div>
             <div className="label" style={{ marginBottom: 4 }}>Notes</div>
             <div className="muted" style={{ fontSize: 'var(--text-sm)', whiteSpace: 'pre-line' }}>{props.notes}</div>
+          </div>
+        </>
+      )}
+
+      {props.businessName && (
+        <>
+          <hr className="divider" />
+          <div style={{ textAlign: 'center' }}>
+            <div className="muted" style={{ fontSize: 'var(--text-xs)' }}>
+              Make all checks payable to {props.businessName}
+            </div>
+            <div className="muted" style={{ fontSize: 'var(--text-xs)', marginTop: 2 }}>
+              Thank you for your business!
+            </div>
           </div>
         </>
       )}

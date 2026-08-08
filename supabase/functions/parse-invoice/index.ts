@@ -52,6 +52,7 @@ const SCHEMA = {
       },
     },
     materials_total: { type: 'number', description: 'Lump-sum materials cost if stated, else 0.' },
+    job_label: { type: 'string', description: 'Short job/project label or site address if the user mentions one (e.g. "123 Main St", "the Jaeman Way job"), else "".' },
     notes: { type: 'string' },
     agent_message: { type: 'string', description: 'Short spoken+written reply: what you understood, and any flagged assumption.' },
     needs_clarification: { type: 'boolean' },
@@ -59,7 +60,7 @@ const SCHEMA = {
   },
   required: [
     'client_id', 'client_match', 'line_items', 'materials_total',
-    'notes', 'agent_message', 'needs_clarification', 'clarifying_question',
+    'job_label', 'notes', 'agent_message', 'needs_clarification', 'clarifying_question',
   ],
 };
 
@@ -77,8 +78,9 @@ function systemPrompt(clients: ClientCtx[], currentDraft: unknown): string {
     '- When something is ambiguous (e.g. the unit is unclear, or you had to guess the rate type), make your best guess, set is_flagged=true, and explain briefly in flag_note. Do not stop the flow for minor ambiguity — flag it for review instead.',
     '- Only ask a clarifying question (needs_clarification=true) when a REQUIRED field is genuinely missing (no client, or no work described).',
     '- Keep agent_message short and natural — it is both shown and spoken aloud.',
+    '- job_label is a short job/project identifier or site address (e.g. "123 Main St", "the Jaeman Way job") — set it if the user mentions one, else "". This is a real, first-class field, distinct from notes.',
     '',
-    'STATE: line_items, materials_total, and notes you return REPLACE the current draft. Always return the COMPLETE invoice as understood so far, incorporating the latest message. If the user corrects one line ("make that two hours"), return all lines with that one corrected. If the user adds a line, return the existing lines plus the new one. Preserve the resolved client_id across turns unless the user changes it.',
+    'STATE: line_items, materials_total, job_label, and notes you return REPLACE the current draft. Always return the COMPLETE invoice as understood so far, incorporating the latest message. If the user corrects one line ("make that two hours"), return all lines with that one corrected. If the user adds a line, return the existing lines plus the new one. Preserve the resolved client_id and job_label across turns unless the user changes them.',
     '',
     'Current draft (JSON):',
     JSON.stringify(currentDraft ?? {}),

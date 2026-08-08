@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Client, DraftLineItem, Invoice, InvoiceDraft, RateType } from '../../lib/types';
+import type { BusinessProfile, Client, DraftLineItem, Invoice, InvoiceDraft, RateType } from '../../lib/types';
 import { RATE_TYPES, rateTypeUnit } from '../../lib/types';
 import { listClients } from '../clients/api';
+import { getBusinessProfile } from '../business/api';
 import { lineAmount, subtotal, invoiceTotal } from '../../lib/calc';
 import { money, todayISO } from '../../lib/format';
 import { approveInvoice } from './api';
@@ -18,11 +19,13 @@ const emptyDraft = (): InvoiceDraft => ({
   issue_date: todayISO(),
   line_items: [],
   materials_total: 0,
+  job_label: null,
   notes: null,
 });
 
 export function InvoicePage() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [draft, setDraft] = useState<InvoiceDraft>(emptyDraft);
   const [approving, setApproving] = useState(false);
   const [approvedNumber, setApprovedNumber] = useState<string | null>(null);
@@ -31,6 +34,7 @@ export function InvoicePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { listClients().then(setClients).catch(() => {}); }, []);
+  useEffect(() => { getBusinessProfile().then(setBusinessProfile).catch(() => {}); }, []);
 
   // Keep a live ref so the async agent turn always sees the latest draft.
   const draftRef = useRef(draft);
@@ -90,19 +94,29 @@ export function InvoicePage() {
     setDraft((d) => ({ ...d, line_items: d.line_items.filter((_, idx) => idx !== i) }));
   }
 
+  /** Deductions (holdbacks) are manually toggled, never voice/agent-produced — see VISION §5. */
+  function toggleDeduction(i: number, isDeduction: boolean) {
+    updateLineItem(i, isDeduction
+      ? { is_deduction: true, rate_type: 'flat', quantity: 1, rate_amount: 0 }
+      : { is_deduction: false, rate_amount: 0 });
+  }
+
   const sub = useMemo(() => subtotal(draft.line_items), [draft.line_items]);
   const total = useMemo(() => invoiceTotal(draft), [draft]);
+
+  const lineItemValid = (li: DraftLineItem) =>
+    !!li.description.trim() && li.quantity > 0 && (li.is_deduction ? li.rate_amount < 0 : li.rate_amount > 0);
 
   const canApprove =
     !!draft.client_id &&
     draft.line_items.length > 0 &&
-    draft.line_items.every((li) => li.description.trim() && li.quantity > 0 && li.rate_amount > 0);
+    draft.line_items.every(lineItemValid);
 
   async function approve() {
     setApproving(true);
     setError(null);
     try {
-      const saved = await approveInvoice(draft);
+      const saved = await approveInvoice(draft, businessProfile);
       setApprovedNumber(saved.invoice_number);
       setApprovedInvoice(saved);
     } catch (e) {
@@ -164,6 +178,13 @@ export function InvoicePage() {
           )}
         </div>
 
+        {/* Job / project — a real field on real invoices, distinct from freeform notes */}
+        <div className="field">
+          <label className="label">Job / project</label>
+          <input className="input" placeholder="e.g. 123 Main St, or the Jaeman Way job" value={draft.job_label ?? ''} disabled={!!approvedNumber}
+            onChange={(e) => setDraft((d) => ({ ...d, job_label: e.target.value || null }))} />
+        </div>
+
         {/* Line items */}
         <div className="field">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -182,23 +203,39 @@ export function InvoicePage() {
                     <TrashIcon size={14} />
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr 1fr', gap: 'var(--s-2)' }}>
-                  <select className="select" value={li.rate_type} disabled={!!approvedNumber}
-                    onChange={(e) => updateLineItem(i, { rate_type: e.target.value as RateType })}>
-                    {RATE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </select>
-                  <input className="input tnum" type="number" min="0" step="0.01" placeholder={`Qty (${rateTypeUnit(li.rate_type)})`}
-                    value={li.quantity || ''} disabled={!!approvedNumber}
-                    onChange={(e) => updateLineItem(i, { quantity: parseFloat(e.target.value) || 0 })} />
+                {li.is_deduction ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span className="muted">$</span>
-                    <input className="input tnum" type="number" min="0" step="0.01" placeholder="Rate"
-                      value={li.rate_amount || ''} disabled={!!approvedNumber}
-                      onChange={(e) => updateLineItem(i, { rate_amount: parseFloat(e.target.value) || 0 })} />
+                    <span className="muted">Deduction of $</span>
+                    <input className="input tnum" type="number" min="0" step="0.01" placeholder="Amount" style={{ flex: 1 }}
+                      value={li.rate_amount ? Math.abs(li.rate_amount) : ''} disabled={!!approvedNumber}
+                      onChange={(e) => updateLineItem(i, { rate_amount: -Math.abs(parseFloat(e.target.value) || 0) })} />
                   </div>
-                </div>
-                <div className="muted tnum" style={{ textAlign: 'right', fontSize: 'var(--text-xs)' }}>
-                  = {money(lineAmount(li))}
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr 1fr', gap: 'var(--s-2)' }}>
+                    <select className="select" value={li.rate_type} disabled={!!approvedNumber}
+                      onChange={(e) => updateLineItem(i, { rate_type: e.target.value as RateType })}>
+                      {RATE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    </select>
+                    <input className="input tnum" type="number" min="0" step="0.01" placeholder={`Qty (${rateTypeUnit(li.rate_type)})`}
+                      value={li.quantity || ''} disabled={!!approvedNumber}
+                      onChange={(e) => updateLineItem(i, { quantity: parseFloat(e.target.value) || 0 })} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span className="muted">$</span>
+                      <input className="input tnum" type="number" min="0" step="0.01" placeholder="Rate"
+                        value={li.rate_amount || ''} disabled={!!approvedNumber}
+                        onChange={(e) => updateLineItem(i, { rate_amount: parseFloat(e.target.value) || 0 })} />
+                    </div>
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--muted)' }}>
+                    <input type="checkbox" checked={!!li.is_deduction} disabled={!!approvedNumber}
+                      onChange={(e) => toggleDeduction(i, e.target.checked)} />
+                    Deduction (e.g. holdback)
+                  </label>
+                  <div className="tnum" style={{ fontSize: 'var(--text-xs)', color: li.is_deduction ? 'var(--danger)' : 'var(--muted)' }}>
+                    = {money(lineAmount(li))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -267,6 +304,9 @@ export function InvoicePage() {
           <InvoiceDocument
             number={approvedNumber}
             issueDate={draft.issue_date}
+            businessName={businessProfile?.name ?? null}
+            businessAddress={businessProfile?.address ?? null}
+            businessPhone={businessProfile?.phone ?? null}
             clientName={draft.client_name}
             clientAddress={draft.client_address}
             clientAccountId={draft.client_account_id}
@@ -274,6 +314,7 @@ export function InvoicePage() {
             materialsTotal={draft.materials_total}
             subtotal={sub}
             total={total}
+            jobLabel={draft.job_label}
             notes={draft.notes}
           />
         </div>

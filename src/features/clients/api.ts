@@ -12,6 +12,7 @@ export interface ClientInput {
   address: string | null;
   account_id: string | null;
   synonyms: string[];
+  emails: string[];
   notes: string | null;
   rates: RateInput[];
 }
@@ -33,6 +34,7 @@ export async function createClient(input: ClientInput): Promise<string> {
       address: input.address,
       account_id: input.account_id,
       synonyms: input.synonyms,
+      emails: input.emails,
       notes: input.notes,
     })
     .select('id')
@@ -51,6 +53,7 @@ export async function updateClient(id: string, input: ClientInput): Promise<void
       address: input.address,
       account_id: input.account_id,
       synonyms: input.synonyms,
+      emails: input.emails,
       notes: input.notes,
     })
     .eq('id', id);
