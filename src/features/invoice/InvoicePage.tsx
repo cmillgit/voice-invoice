@@ -19,6 +19,7 @@ const emptyDraft = (): InvoiceDraft => ({
   issue_date: todayISO(),
   line_items: [],
   materials_total: 0,
+  job_label: null,
   notes: null,
 });
 
@@ -177,6 +178,13 @@ export function InvoicePage() {
           )}
         </div>
 
+        {/* Job / project — a real field on real invoices, distinct from freeform notes */}
+        <div className="field">
+          <label className="label">Job / project</label>
+          <input className="input" placeholder="e.g. 123 Main St, or the Jaeman Way job" value={draft.job_label ?? ''} disabled={!!approvedNumber}
+            onChange={(e) => setDraft((d) => ({ ...d, job_label: e.target.value || null }))} />
+        </div>
+
         {/* Line items */}
         <div className="field">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -306,6 +314,7 @@ export function InvoicePage() {
             materialsTotal={draft.materials_total}
             subtotal={sub}
             total={total}
+            jobLabel={draft.job_label}
             notes={draft.notes}
           />
         </div>

@@ -27,6 +27,7 @@ export interface DocProps {
   materialsTotal: number;
   subtotal: number;
   total: number;
+  jobLabel?: string | null;
   notes: string | null;
 }
 
@@ -105,6 +106,13 @@ export function InvoiceDocument(props: DocProps) {
         </div>
       </div>
 
+      {props.jobLabel && (
+        <div style={{ textAlign: 'center' }}>
+          <div className="label" style={{ marginBottom: 4 }}>Job</div>
+          <div style={{ fontWeight: 600, fontSize: 'var(--text-md)' }}>{props.jobLabel}</div>
+        </div>
+      )}
+
       {/* Line items table */}
       <table className="table">
         <thead>
@@ -161,6 +169,20 @@ export function InvoiceDocument(props: DocProps) {
           <div>
             <div className="label" style={{ marginBottom: 4 }}>Notes</div>
             <div className="muted" style={{ fontSize: 'var(--text-sm)', whiteSpace: 'pre-line' }}>{props.notes}</div>
+          </div>
+        </>
+      )}
+
+      {props.businessName && (
+        <>
+          <hr className="divider" />
+          <div style={{ textAlign: 'center' }}>
+            <div className="muted" style={{ fontSize: 'var(--text-xs)' }}>
+              Make all checks payable to {props.businessName}
+            </div>
+            <div className="muted" style={{ fontSize: 'var(--text-xs)', marginTop: 2 }}>
+              Thank you for your business!
+            </div>
           </div>
         </>
       )}

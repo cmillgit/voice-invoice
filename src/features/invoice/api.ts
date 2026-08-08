@@ -24,6 +24,7 @@ export async function approveInvoice(draft: InvoiceDraft, business: BusinessProf
       client_address: draft.client_address,
       client_account_id: draft.client_account_id,
       materials_total: draft.materials_total,
+      job_label: draft.job_label,
       notes: draft.notes,
       business_name: business?.name ?? null,
       business_address: business?.address ?? null,

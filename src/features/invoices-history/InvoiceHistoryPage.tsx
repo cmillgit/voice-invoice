@@ -110,6 +110,7 @@ export function InvoiceHistoryPage() {
               materialsTotal={selected.materials_total}
               subtotal={selected.subtotal}
               total={selected.total}
+              jobLabel={selected.job_label}
               notes={selected.notes}
             />
           </div>

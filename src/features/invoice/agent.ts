@@ -15,6 +15,7 @@ interface Parsed {
   client_match: 'high' | 'low' | 'none';
   line_items: ParsedLineItem[];
   materials_total: number;
+  job_label: string;
   notes: string;
   agent_message: string;
   needs_clarification: boolean;
@@ -52,6 +53,7 @@ export async function runAgentTurn(args: {
         client_id: draft.client_id,
         line_items: draft.line_items,
         materials_total: draft.materials_total,
+        job_label: draft.job_label,
         notes: draft.notes,
       },
     },
@@ -91,6 +93,7 @@ export async function runAgentTurn(args: {
   }));
 
   if (typeof parsed.materials_total === 'number') next.materials_total = parsed.materials_total;
+  if (parsed.job_label) next.job_label = parsed.job_label;
   if (parsed.notes) next.notes = parsed.notes;
 
   const agentMessage = parsed.needs_clarification && parsed.clarifying_question

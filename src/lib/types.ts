@@ -34,6 +34,8 @@ export interface Client {
   address: string | null;
   account_id: string | null;
   synonyms: string[];
+  // Where an invoice would be sent. Data capture only — no send feature yet.
+  emails: string[];
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -70,6 +72,10 @@ export interface Invoice {
   materials_total: number;
   subtotal: number;
   total: number;
+  // Short job/project identifier or site address — a real first-class field on real
+  // invoices (all 6 reviewed had one), distinct from freeform notes. See migration
+  // 20260614000003_job_label.sql.
+  job_label: string | null;
   notes: string | null;
   created_at: string;
   // Business identity snapshotted at issue time — see migration 20260614000002.
@@ -109,5 +115,6 @@ export interface InvoiceDraft {
   issue_date: string; // YYYY-MM-DD
   line_items: DraftLineItem[];
   materials_total: number;
+  job_label: string | null;
   notes: string | null;
 }

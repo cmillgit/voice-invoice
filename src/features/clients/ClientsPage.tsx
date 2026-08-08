@@ -93,6 +93,7 @@ export function ClientsPage() {
                     <td>
                       <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{c.name}</div>
                       {c.address && <div className="muted" style={{ fontSize: 'var(--text-xs)' }}>{c.address.split('\n')[0]}</div>}
+                      {c.emails.length > 0 && <div className="muted" style={{ fontSize: 'var(--text-xs)' }}>{c.emails.join(', ')}</div>}
                     </td>
                     <td className="muted mono">{c.account_id ?? '—'}</td>
                     <td>
