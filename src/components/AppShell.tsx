@@ -24,44 +24,21 @@ export function AppShell({
   const { session, signOut } = useAuth();
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '232px 1fr', height: '100%' }}>
-      {/* Sidebar */}
-      <aside
-        style={{
-          borderRight: '1px solid var(--line)',
-          background: 'var(--surface)',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: 'var(--s-4)',
-        }}
-      >
-        <div style={{ padding: 'var(--s-2) var(--s-2) var(--s-5)' }}>
+    <div className="app-shell">
+      {/* Sidebar — collapses into a bottom tab bar on mobile, see index.css */}
+      <aside className="app-sidebar">
+        <div className="app-sidebar-brand">
           <Wordmark />
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <nav className="app-nav">
           {NAV.map((item) => {
             const active = tab === item.id;
             return (
               <button
                 key={item.id}
+                className={`app-nav-item${active ? ' active' : ''}`}
                 onClick={() => onTab(item.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--s-3)',
-                  height: 38,
-                  padding: '0 var(--s-3)',
-                  border: 0,
-                  borderRadius: 'var(--radius)',
-                  cursor: 'pointer',
-                  background: active ? 'var(--accent-soft)' : 'transparent',
-                  color: active ? 'var(--accent-ink)' : 'var(--ink-2)',
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: active ? 600 : 500,
-                  textAlign: 'left',
-                  transition: 'background var(--dur) var(--ease)',
-                }}
               >
                 {item.icon}
                 {item.label}
@@ -70,7 +47,7 @@ export function AppShell({
           })}
         </nav>
 
-        <div style={{ marginTop: 'auto', borderTop: '1px solid var(--line)', paddingTop: 'var(--s-3)' }}>
+        <div className="app-sidebar-footer">
           <div className="muted" style={{ fontSize: 'var(--text-xs)', padding: '0 var(--s-3) var(--s-2)' }}>
             {session?.user.email}
           </div>
@@ -81,7 +58,7 @@ export function AppShell({
       </aside>
 
       {/* Main */}
-      <main style={{ overflow: 'auto' }}>{children}</main>
+      <main className="app-main">{children}</main>
     </div>
   );
 }

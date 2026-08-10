@@ -42,6 +42,7 @@ export function InvoiceDocument(props: DocProps) {
 
   return (
     <div
+      className="invoice-document"
       style={{
         background: 'var(--surface)',
         border: '1px solid var(--line)',
@@ -112,46 +113,48 @@ export function InvoiceDocument(props: DocProps) {
       )}
 
       {/* Line items table */}
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Description</th>
-            <th className="num" style={{ width: 90 }}>Qty</th>
-            <th className="num" style={{ width: 120 }}>Rate</th>
-            <th className="num" style={{ width: 120 }}>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {props.lineItems.length === 0 ? (
-            <tr><td colSpan={4} className="muted" style={{ padding: 'var(--s-5)', textAlign: 'center' }}>
-              {empty ? 'Speak or enter the work performed to build this invoice.' : 'No line items yet.'}
-            </td></tr>
-          ) : (
-            props.lineItems.map((li, i) => (
-              <tr key={i}>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ color: 'var(--ink)' }}>{li.description || <span className="muted">—</span>}</span>
-                    {li.is_flagged && (
-                      <span className="chip chip-flag" title={li.flag_note ?? 'Best-guess — please review'}>
-                        <FlagIcon size={11} /> review
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="num tnum">{li.is_deduction ? '—' : `${qty(li.quantity)} ${rateTypeUnit(li.rate_type)}`}</td>
-                <td className="num tnum">{li.is_deduction ? '—' : money(li.rate_amount)}</td>
-                <td className="num tnum" style={{ fontWeight: 600, color: li.is_deduction ? 'var(--danger)' : undefined }}>
-                  {money(li.amount)}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+      <div className="table-scroll">
+        <table className="table" style={{ minWidth: 460 }}>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th className="num" style={{ width: 90 }}>Qty</th>
+              <th className="num" style={{ width: 120 }}>Rate</th>
+              <th className="num" style={{ width: 120 }}>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {props.lineItems.length === 0 ? (
+              <tr><td colSpan={4} className="muted" style={{ padding: 'var(--s-5)', textAlign: 'center' }}>
+                {empty ? 'Speak or enter the work performed to build this invoice.' : 'No line items yet.'}
+              </td></tr>
+            ) : (
+              props.lineItems.map((li, i) => (
+                <tr key={i}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ color: 'var(--ink)' }}>{li.description || <span className="muted">—</span>}</span>
+                      {li.is_flagged && (
+                        <span className="chip chip-flag" title={li.flag_note ?? 'Best-guess — please review'}>
+                          <FlagIcon size={11} /> review
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="num tnum">{li.is_deduction ? '—' : `${qty(li.quantity)} ${rateTypeUnit(li.rate_type)}`}</td>
+                  <td className="num tnum">{li.is_deduction ? '—' : money(li.rate_amount)}</td>
+                  <td className="num tnum" style={{ fontWeight: 600, color: li.is_deduction ? 'var(--danger)' : undefined }}>
+                    {money(li.amount)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* Totals */}
-      <div style={{ marginLeft: 'auto', width: 280, display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>
+      <div className="invoice-document-totals" style={{ marginLeft: 'auto', width: 280, display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>
         <Row label="Subtotal" value={money(props.subtotal)} />
         {props.materialsTotal > 0 && <Row label="Materials" value={money(props.materialsTotal)} />}
         <hr className="divider" style={{ margin: 'var(--s-1) 0' }} />

@@ -74,8 +74,8 @@ export function ClientsPage() {
           </button>
         </div>
       ) : (
-        <div className="card">
-          <table className="table">
+        <div className="card table-scroll">
+          <table className="table" style={{ minWidth: 640 }}>
             <thead>
               <tr>
                 <th>Name</th>

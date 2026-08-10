@@ -425,10 +425,18 @@ natural future additions — design fields so they can be added without reshapin
 
 ### Platforms
 
-- **Desktop is the primary development target.** Build and refine desktop first.
-- **Mobile-optimized version comes after** the desktop experience is judged good enough. Don't let
-  mobile constraints compromise the desktop build, but don't make desktop choices that make a later
-  mobile version impossible.
+- **Desktop was the primary development target** and was refined first.
+- **Responsive mobile layout — shipped (2026-08-10).** The sidebar collapses into a fixed bottom
+  tab bar below 768px; the compose/preview split stacks vertically; wide tables (clients, invoice
+  history, the line-item table) scroll horizontally within their own container instead of squeezing
+  columns or breaking the page; modals clamp to `92vw`. Desktop layout is unchanged (verified at
+  1280px). This is a **CSS-only responsive pass** — same React tree, same one-template invoice
+  document on every breakpoint.
+- **Installable PWA — shipped (2026-08-10).** `public/manifest.json` + icons (192/512/maskable,
+  generated from the existing ram-head mark) + `apple-touch-icon`/`theme-color`/
+  `apple-mobile-web-app-capable` meta tags in `index.html`. **Deliberately no service worker and no
+  offline caching** — this is a data-driven business app; a stale cached client list or rate table
+  would be actively harmful, so "works offline" is a non-goal, not an oversight.
 
 ### Design language
 
@@ -532,7 +540,8 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
 - Aesthetic: **"Trade & Craft"** — warm bone canvas, deep-green accent, Fraunces serif headings +
   Public Sans body, larger type/targets for accessibility (adopted 2026-06-13; supersedes the original
   Fortune-500-tech direction).
-- **Desktop first**, mobile later.
+- **Desktop first**, then a responsive mobile layout pass and installable PWA (both shipped
+  2026-08-10, no offline caching by design) — see §8.
 
 ### Open / deferred (revisit deliberately)
 
@@ -562,7 +571,8 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   SQL — see §5); the exact table/column shape is an architecture-session task.
 - **Synonym schema** — the *scope* is decided (client identity + job/work types + rate language); the
   exact fields/tables are an architecture-session task.
-- **Mobile-specific UX.**
+- **Native app / offline support.** The responsive web layout and installable PWA are shipped (see
+  §8); a true native app and any offline-capable data layer remain deferred.
 
 ---
 

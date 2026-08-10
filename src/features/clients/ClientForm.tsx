@@ -71,10 +71,10 @@ export function ClientForm({ initial, onCancel, onSave }: Props) {
     <div
       onClick={onCancel}
       style={{ position: 'fixed', inset: 0, background: 'rgba(20,22,26,0.35)', display: 'grid',
-        placeItems: 'center', padding: 'var(--s-4)', zIndex: 50 }}
+        gridTemplateColumns: 'minmax(0, 1fr)', placeItems: 'center', padding: 'var(--s-4)', zIndex: 50, overflow: 'auto' }}
     >
       <div
-        className="card"
+        className="card modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{ width: 560, maxHeight: '88vh', overflow: 'auto', padding: 'var(--s-6)' }}
       >
@@ -121,7 +121,7 @@ export function ClientForm({ initial, onCancel, onSave }: Props) {
                 </div>
               )}
               {rates.map((r, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)', marginBottom: 'var(--s-2)' }}>
+                <div key={i} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--s-2)', marginBottom: 'var(--s-2)' }}>
                   <select className="select" value={r.rate_type} style={{ width: 140 }}
                     onChange={(e) => updateRate(i, { rate_type: e.target.value as RateType })}>
                     {RATE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
