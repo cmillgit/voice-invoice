@@ -5,7 +5,7 @@
 > this document is updated in the same session that changes it. Treat its accuracy as a maintained
 > invariant, not a one-time output.
 >
-> **Last updated:** 2026-06-14 · **Phase:** Phase 1 feature-complete, validated against real invoices
+> **Last updated:** 2026-08-10 · **Phase:** Phase 1 feature-complete, validated against real invoices
 
 > **Build status (2026-06-13):** Phase 1 is built and verified end-to-end — React + Vite + TS app with the
 > design system, email/password auth gate, app shell (now 4 tabs — New Invoice · Invoices · Clients ·
@@ -46,6 +46,25 @@
 > lockup — ram head + "RAM PAINTING" + phone — top-center, replacing the old text-only "From" block).
 > See §5 for asset-processing details and §7 for the resulting document layout, including the dropped
 > business-street-address display (open item if wanted back).
+
+> **Mobile responsive layout + installable PWA (2026-08-10):** shipped a CSS-only responsive pass
+> (sidebar collapses to a bottom tab bar below 768px, compose/preview stacks, wide tables scroll
+> horizontally in place, modals clamp to the viewport) and PWA installability (manifest + icons,
+> deliberately no service worker/offline caching — stale cached client or rate data would be actively
+> harmful for this app). See §8, §10.
+
+> **Voice agent capability boundary — added, then corrected same day (2026-08-10):** a bug report
+> showed the agent telling the user a dictated $2,000 holdback had been "noted" and that "the app will
+> handle" it, when nothing downstream applied it and the invoice total silently stayed wrong (deductions
+> had no representation in the agent's schema at all). First fix: taught the agent to refuse and explain
+> the limitation. **That fix was wrong and reversed the same day** — it treated deductions as needing a
+> stricter, voice-blocked safety model than every other field, when the app's actual safety mechanism
+> (mandatory human review of the live preview, with edit/delete, before Approve writes anything — §4.3)
+> already covers deductions exactly the same way it covers every other voice-set field. Corrected: the
+> agent can now create a deduction line when the user states a concrete dollar amount (never a computed
+> percentage — it must ask for the dollar figure, preserving deterministic-money); tax, discounts, and
+> editing/voiding an issued invoice remain genuinely out of reach only because there's no field for them
+> anywhere in the app, voice or manual. See §5, §10.
 
 ---
 
@@ -284,10 +303,11 @@ real seed data in the database (see §12 for what was deleted).
   client, total); clicking one opens the same `InvoiceDocument` component read-only, with a
   Download PDF action. This is also how the 6 seeded historical invoices are now visible in the app for
   the first time.
-- **Manual deduction-line UI.** A per-line-item checkbox ("Deduction (e.g. holdback)") in the
-  invoice-creation screen swaps that line's inputs for a single amount field and stores it as a negative
-  `rate_amount` with `is_deduction=true`. **Voice still never creates a deduction** — deductions remain
-  manual-only by design, so the agent can't invent a withheld amount.
+- **Deduction-line UI.** A per-line-item checkbox ("Deduction (e.g. holdback)") in the invoice-creation
+  screen swaps that line's inputs for a single amount field and stores it as a negative `rate_amount`
+  with `is_deduction=true`. Originally manual-only; **voice can create one too as of 2026-08-10** — see
+  the capability-boundary entry below. Either way, nothing is written to the database until the user
+  reviews the live preview and presses Approve, which is what actually makes this safe (§4.3).
 
 **Document review round-trip (2026-06-14, later same day):** reviewed a mocked-up redesign of the PDF
 against a real issued invoice and resolved the open question above — **formalized, not cosmetic.**
@@ -505,9 +525,28 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   Multiple line items allowed, mixed rate types within one invoice allowed. Client defaults with
   explicit job-level overrides; **not every client has a default** (flat-priced clients often don't —
   confirmed by real invoices, see §5).
-- **Holdback/retention deduction lines** — validated against real invoicing (§5); manually creatable
-  via a per-line checkbox in the invoice-creation screen. **Deductions are manual-only, never
-  voice/agent-produced** — the agent must never invent a withheld amount.
+- **Holdback/retention deduction lines** — validated against real invoicing (§5); creatable via a
+  per-line checkbox in the invoice-creation screen **and voice**, as of 2026-08-10. The agent can add
+  a deduction line when the user states a concrete dollar amount (never a computed percentage — it
+  must ask for the exact figure rather than derive one, preserving the deterministic-money rule); it
+  cannot invent an amount. Voice-created deduction lines go through the same mandatory review/approve
+  gate as everything else (§4.3) — they appear in the live preview like any other line, and the user
+  can edit or delete them before anything is written to the database. See §5.
+- **Agent capability boundary, enforced in the system prompt (2026-08-10):** the voice agent can only
+  ever affect line items (including deductions — see above), `materials_total`, `job_label`, and
+  `notes`. Tax, discounts/markups, and editing or voiding an already-issued invoice remain out of
+  reach — not a money-safety restriction, but because none of those have any representation anywhere
+  in the app, voice or manual, to write to. When asked for one, the agent must say so plainly and
+  never write the request into `notes` while implying it took effect.
+  This rule went through two iterations the same day: a bug report showed the agent telling the user a
+  dictated holdback had been "noted" and "the app will handle it," when nothing downstream applied it
+  and the total silently stayed wrong. The first fix blocked the agent from creating deductions at all
+  and had it explain the limitation instead — but that wrongly treated deductions as needing a
+  different, stricter safety model than every other voice-set field, when the review/approve/edit/
+  delete gate the whole app already relies on covers them exactly the same way. Corrected same day (see
+  above) — the actual, permanent boundary is about what the schema has no representation for at all
+  (tax, discounts, editing an issued invoice), not about which fields are "too risky" for voice when a
+  human reviews everything before it's saved.
 - **Business "bill-from" identity** — a `business_profile` table (one row per user), a **Business**
   settings tab, and (as of 2026-06-14, same day) a **real ram-head logo** replacing the old
   soundwave-bars app mark and the old text-only "From" block, shown top-center on the document/PDF
@@ -517,8 +556,8 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   document component, read-only) with a re-download PDF action.
 - **Job / project is a first-class field** (`invoices.job_label`), separate from freeform `notes`.
   Manual entry (compose form) **and** voice-settable (the agent extracts it like it does `notes`/
-  `materials_total`) — unlike deductions, there's no money-safety reason to keep it manual-only.
-  Rendered centered, above the line-item table, on both the live preview and the PDF — see §5, §7.
+  `materials_total`). Rendered centered, above the line-item table, on both the live preview and the
+  PDF — see §5, §7.
 - **Document footer matches the father's real invoices**: "Make all checks payable to
   `{business name}`" / "Thank you for your business!" — replacing an earlier self-branded
   "Generated by VoiceInvoice" footer, which doesn't belong on a client-facing document.

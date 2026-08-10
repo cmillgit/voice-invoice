@@ -6,9 +6,13 @@ interface ParsedLineItem {
   description: string;
   rate_type: RateType;
   quantity: number;
-  explicit_rate: number; // 0 → use client default
+  explicit_rate: number; // 0 → use client default (ignored for deductions)
   is_flagged: boolean;
   flag_note: string;
+  // Holdback/retention line. explicit_rate is the dollar amount to withhold (magnitude,
+  // never 0 — the model must ask for an amount rather than guess or compute one from a
+  // percentage). The frontend applies the negative sign; never the model.
+  is_deduction: boolean;
 }
 interface Parsed {
   client_id: string;
@@ -87,9 +91,15 @@ export async function runAgentTurn(args: {
     description: li.description,
     rate_type: li.rate_type,
     quantity: li.quantity,
-    rate_amount: li.explicit_rate > 0 ? li.explicit_rate : rateLookup(li.rate_type),
+    // Deductions: the model gives a magnitude only, never a rate lookup — the sign is
+    // applied here, never by the model. Regular lines: explicit rate if stated, else the
+    // client's stored rate for that type.
+    rate_amount: li.is_deduction
+      ? -Math.abs(li.explicit_rate)
+      : li.explicit_rate > 0 ? li.explicit_rate : rateLookup(li.rate_type),
     is_flagged: li.is_flagged,
     flag_note: li.flag_note || null,
+    is_deduction: li.is_deduction,
   }));
 
   if (typeof parsed.materials_total === 'number') next.materials_total = parsed.materials_total;
