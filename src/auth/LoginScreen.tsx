@@ -20,7 +20,7 @@ export function LoginScreen() {
 
   return (
     <div style={{ minHeight: '100%', display: 'grid', placeItems: 'center', padding: 'var(--s-4)' }}>
-      <div className="card" style={{ width: 380, padding: 'var(--s-6)' }}>
+      <div className="card login-card" style={{ width: 380, padding: 'var(--s-6)' }}>
         <div style={{ marginBottom: 'var(--s-5)', textAlign: 'center' }}>
           <Wordmark />
           <p className="muted" style={{ marginTop: 'var(--s-3)', fontSize: 'var(--text-sm)' }}>

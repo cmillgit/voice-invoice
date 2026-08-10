@@ -54,6 +54,7 @@
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; }
+html, body { overflow-x: hidden; }
 
 body {
   margin: 0;
@@ -148,3 +149,54 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width
 
 .muted { color: var(--muted); }
 .mono { font-family: var(--font-mono); }
+
+/* ---- App shell -------------------------------------------------------------
+   Desktop: fixed sidebar + main. Mobile: sidebar collapses into a fixed
+   bottom tab bar (safe-area-inset-aware for iOS home indicator). */
+.app-shell { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
+.app-sidebar {
+  border-right: 1px solid var(--line); background: var(--surface);
+  display: flex; flex-direction: column; padding: var(--s-4);
+}
+.app-sidebar-brand { padding: var(--s-2) var(--s-2) var(--s-5); }
+.app-nav { display: flex; flex-direction: column; gap: 2px; }
+.app-nav-item {
+  display: flex; align-items: center; gap: var(--s-3); height: 38px; padding: 0 var(--s-3);
+  border: 0; border-radius: var(--radius); cursor: pointer; background: transparent;
+  color: var(--ink-2); font-size: var(--text-sm); font-weight: 500; text-align: left;
+  transition: background var(--dur) var(--ease); width: 100%;
+}
+.app-nav-item.active { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.app-sidebar-footer { margin-top: auto; border-top: 1px solid var(--line); padding-top: var(--s-3); }
+.app-main { overflow: auto; }
+
+/* ---- Horizontal-scroll table wrapper — used on mobile so wide tables scroll
+   instead of squeezing columns or overflowing the page. ---------------------- */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ---- Responsive breakpoint -------------------------------------------------- */
+@media (max-width: 768px) {
+  .app-shell { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  .app-sidebar {
+    order: 2; flex-direction: row; align-items: center; border-right: 0; border-top: 1px solid var(--line);
+    padding: var(--s-2) var(--s-3); padding-bottom: calc(var(--s-2) + env(safe-area-inset-bottom));
+    position: sticky; bottom: 0; z-index: 10;
+  }
+  .app-sidebar-brand { display: none; }
+  .app-nav { flex: 1; flex-direction: row; justify-content: space-around; gap: 0; }
+  .app-nav-item { flex-direction: column; height: auto; padding: 6px 4px; gap: 2px; font-size: var(--text-xs); }
+  .app-sidebar-footer { margin-top: 0; border-top: 0; padding-top: 0; }
+  .app-sidebar-footer .muted { display: none; }
+  .app-main { order: 1; }
+
+  .invoice-page-grid { grid-template-columns: 1fr !important; height: auto !important; }
+  .invoice-page-compose { border-right: 0 !important; border-bottom: 1px solid var(--line); padding: var(--s-4) !important; }
+  .invoice-page-preview { padding: var(--s-4) !important; }
+
+  .invoice-document { padding: var(--s-4) !important; }
+  .invoice-document-totals { width: 100% !important; }
+
+  .modal-card { width: min(560px, 92vw) !important; }
+  .login-card { width: min(380px, 92vw) !important; }
+  .modal-detail { padding: var(--s-3) !important; }
+}

@@ -60,8 +60,8 @@ export function InvoiceHistoryPage() {
           </p>
         </div>
       ) : (
-        <div className="card">
-          <table className="table">
+        <div className="card table-scroll">
+          <table className="table" style={{ minWidth: 480 }}>
             <thead>
               <tr>
                 <th>Invoice #</th>
@@ -86,9 +86,10 @@ export function InvoiceHistoryPage() {
 
       {selected && (
         <div
+          className="modal-detail"
           onClick={() => setSelected(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(33,30,26,0.4)', display: 'grid',
-            placeItems: 'center', padding: 'var(--s-5)', zIndex: 50, overflow: 'auto' }}
+            gridTemplateColumns: 'minmax(0, 1fr)', placeItems: 'center', padding: 'var(--s-5)', zIndex: 50, overflow: 'auto' }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 720, display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s-2)' }}>

@@ -150,9 +150,9 @@ export function InvoicePage() {
   const docLineItems = draft.line_items.map((li) => ({ ...li, amount: lineAmount(li) }));
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(380px, 460px) 1fr', height: '100%' }}>
+    <div className="invoice-page-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(380px, 460px) 1fr', height: '100%' }}>
       {/* Left — compose */}
-      <div style={{ borderRight: '1px solid var(--line)', overflow: 'auto', padding: 'var(--s-6)', display: 'flex', flexDirection: 'column', gap: 'var(--s-5)' }}>
+      <div className="invoice-page-compose" style={{ borderRight: '1px solid var(--line)', overflow: 'auto', padding: 'var(--s-6)', display: 'flex', flexDirection: 'column', gap: 'var(--s-5)' }}>
         <div>
           <h1 style={{ fontSize: 'var(--text-xl)' }}>New invoice</h1>
           <p className="muted" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--s-1)' }}>
@@ -266,7 +266,7 @@ export function InvoicePage() {
       </div>
 
       {/* Right — preview + approval */}
-      <div style={{ overflow: 'auto', padding: 'var(--s-6)', background: 'var(--canvas)' }}>
+      <div className="invoice-page-preview" style={{ overflow: 'auto', padding: 'var(--s-6)', background: 'var(--canvas)' }}>
         <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
           {approvedNumber ? (
             <div className="card" style={{ padding: 'var(--s-4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
