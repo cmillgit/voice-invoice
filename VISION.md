@@ -508,6 +508,13 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
 - **Holdback/retention deduction lines** — validated against real invoicing (§5); manually creatable
   via a per-line checkbox in the invoice-creation screen. **Deductions are manual-only, never
   voice/agent-produced** — the agent must never invent a withheld amount.
+- **Agent capability boundary, enforced in the system prompt (2026-08-10):** the voice agent can only
+  ever affect line items, `materials_total`, `job_label`, and `notes` — nothing else (deductions, tax,
+  discounts, editing/voiding an issued invoice) can be applied through it, no matter how the request
+  is phrased. When asked for something out of bounds, it must say so plainly and name the manual step
+  — never write the request into `notes` while implying it took effect. This was added after a real
+  bug: the agent told the user a dictated holdback had been "noted" and "the app will handle" it, when
+  nothing downstream applied it and the total silently stayed wrong.
 - **Business "bill-from" identity** — a `business_profile` table (one row per user), a **Business**
   settings tab, and (as of 2026-06-14, same day) a **real ram-head logo** replacing the old
   soundwave-bars app mark and the old text-only "From" block, shown top-center on the document/PDF
