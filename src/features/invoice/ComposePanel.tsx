@@ -3,6 +3,7 @@ import { useSpeech } from './useSpeech';
 import { speechOut } from './speech-out';
 import { MicButton } from './MicButton';
 import { SendIcon } from '../../components/icons';
+import { isStandalonePWA } from '../../lib/pwa';
 import type { Turn } from './agent';
 
 /**
@@ -19,6 +20,7 @@ export function ComposePanel({
   onUtterance: (utterance: string, conversation: Turn[]) => Promise<string>;
 }) {
   const { supported, listening, transcript, interim, error, setTranscript, start, pause, clear } = useSpeech();
+  const hideMic = isStandalonePWA();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
   const [voiceOn, setVoiceOn] = useState(speechOut.supported);
@@ -89,14 +91,14 @@ export function ComposePanel({
       )}
 
       <div style={{ display: 'flex', gap: 'var(--s-3)', alignItems: 'flex-end' }}>
-        <MicButton listening={listening} disabled={disabled || !supported || busy} onToggle={handleMic} />
+        {!hideMic && <MicButton listening={listening} disabled={disabled || !supported || busy} onToggle={handleMic} />}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div className="compose-input-bar">
             <textarea
               className="textarea"
               style={{ flex: 1, resize: 'none' }}
               rows={1}
-              placeholder={supported ? 'Tap the mic and speak, or type here…' : 'Voice not supported in this browser — type here…'}
+              placeholder={hideMic ? 'Type here…' : supported ? 'Tap the mic and speak, or type here…' : 'Voice not supported in this browser — type here…'}
               value={transcript}
               disabled={disabled || busy}
               onChange={(e) => setTranscript(e.target.value)}
