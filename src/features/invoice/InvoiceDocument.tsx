@@ -141,7 +141,9 @@ export function InvoiceDocument(props: DocProps) {
                       )}
                     </div>
                   </td>
-                  <td className="num tnum">{li.is_deduction || li.rate_type === 'flat' ? '—' : `${qty(li.quantity)} ${rateTypeUnit(li.rate_type)}`}</td>
+                  <td className="num tnum">
+                    {li.is_deduction ? '—' : li.rate_type === 'flat' ? qty(li.quantity) : `${qty(li.quantity)} ${rateTypeUnit(li.rate_type)}`}
+                  </td>
                   <td className="num tnum">{li.is_deduction ? '—' : money(li.rate_amount)}</td>
                   <td className="num tnum" style={{ fontWeight: 600, color: li.is_deduction ? 'var(--danger)' : undefined }}>
                     {money(li.amount)}
