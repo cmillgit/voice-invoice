@@ -96,7 +96,7 @@ export function ComposePanel({
               className="textarea"
               style={{ flex: 1, resize: 'none' }}
               rows={1}
-              placeholder={supported ? 'Tap the mic and speak, or type here…' : 'Voice not supported in this browser — type here…'}
+              placeholder={supported ? 'Tap the mic and speak, or type here…' : 'Voice dictation isn\'t available here — type here, or open this app in Safari (not the installed icon) to dictate…'}
               value={transcript}
               disabled={disabled || busy}
               onChange={(e) => setTranscript(e.target.value)}
