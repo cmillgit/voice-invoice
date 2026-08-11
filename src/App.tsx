@@ -10,16 +10,32 @@ import { BusinessSettingsPage } from './features/business/BusinessSettingsPage';
 function AuthedApp() {
   const { session, loading } = useAuth();
   const [tab, setTab] = useState<Tab>('invoice');
+  const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
 
   if (loading) {
     return <div style={{ display: 'grid', placeItems: 'center', height: '100%' }} className="muted">Loading…</div>;
   }
   if (!session) return <LoginScreen />;
 
+  function handleNavTab(t: Tab) {
+    if (t === 'invoice') setEditInvoiceId(null); // a plain nav click always starts a fresh invoice
+    setTab(t);
+  }
+  function handleEditInvoice(id: string) {
+    setEditInvoiceId(id);
+    setTab('invoice');
+  }
+
   return (
-    <AppShell tab={tab} onTab={setTab}>
-      {tab === 'invoice' && <InvoicePage />}
-      {tab === 'history' && <InvoiceHistoryPage />}
+    <AppShell tab={tab} onTab={handleNavTab}>
+      {tab === 'invoice' && (
+        <InvoicePage
+          key={editInvoiceId ?? 'new'}
+          invoiceId={editInvoiceId}
+          onFinishEditing={() => setEditInvoiceId(null)}
+        />
+      )}
+      {tab === 'history' && <InvoiceHistoryPage onEditInvoice={handleEditInvoice} />}
       {tab === 'clients' && <ClientsPage />}
       {tab === 'business' && <BusinessSettingsPage />}
     </AppShell>
