@@ -148,13 +148,21 @@ export function InvoicePdf({ invoice }: { invoice: Invoice }) {
   );
 }
 
+export function buildPdfFilename(invoice: Invoice): string {
+  const jobPart = (invoice.job_label?.trim() || invoice.invoice_number)
+    .replace(/[\\/:*?"<>|]+/g, '-')   // filesystem-unsafe characters on Windows/macOS
+    .replace(/\s+/g, ' ')
+    .trim();
+  return `RAM - ${jobPart} ${invoice.issue_date}.pdf`;
+}
+
 /** Build the PDF and trigger a browser download. */
 export async function downloadInvoicePdf(invoice: Invoice): Promise<void> {
   const blob = await pdf(<InvoicePdf invoice={invoice} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `invoice-${invoice.invoice_number}.pdf`;
+  a.download = buildPdfFilename(invoice);
   document.body.appendChild(a);
   a.click();
   a.remove();
