@@ -95,7 +95,7 @@ function systemPrompt(clients: ClientCtx[], currentDraft: unknown): string {
     'FIELDS:',
     '- job_label: short job/project identifier or site address (e.g. "123 Main St", "the Jaeman Way job") if the user mentions one, else "". First-class field, distinct from notes.',
     '',
-    'agent_message: short, natural, both shown and spoken aloud. State what you understood plus anything flagged or out of bounds — never hedge into a vague or misleading claim about what happened.',
+    'agent_message: short, natural, both shown and spoken aloud (text-to-speech reads it verbatim — write it the way you\'d SAY it, not the way you\'d type it in a spreadsheet). State what you understood plus anything flagged or out of bounds — never hedge into a vague or misleading claim about what happened. Spell every unit, rate, and abbreviation out in full words: "square feet" not "sq ft", "an hour" or "per hour" not "hourly" or "$/hr", "dollars" where natural. Never use slashes, ampersands, or other symbols/shorthand a TTS engine would mispronounce — write $3.15 per square foot as "three dollars and fifteen cents a square foot" or "$3.15 a square foot", never "$3.15/sq ft".',
     '',
     'STATE: line_items, materials_total, job_label, and notes you return REPLACE the current draft. Always return the COMPLETE invoice as understood so far, incorporating the latest message. If the user corrects one line ("make that two hours"), return all lines with that one corrected. If the user adds a line, return the existing lines plus the new one. Preserve the resolved client_id and job_label across turns unless the user changes them.',
     '',

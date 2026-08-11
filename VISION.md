@@ -66,6 +66,18 @@
 > editing/voiding an issued invoice remain genuinely out of reach only because there's no field for them
 > anywhere in the app, voice or manual. See §5, §10.
 
+> **Model swap + natural voice output (2026-08-10, later same day):** `parse-invoice` moved from
+> `claude-opus-4-8` to `claude-sonnet-5` (same request surface, no other changes needed). Separately,
+> the agent's spoken replies moved off the browser's robotic built-in `SpeechSynthesis` to a real
+> neural voice: a new `speak` Edge Function calls ElevenLabs and streams back `audio/mpeg`, which the
+> frontend plays directly (`src/features/invoice/speech-out.ts`) — same interruption semantics (agent
+> never talks over him; speaking is cancelled the moment he starts dictating). Also updated the
+> `agent_message` prompt rule so replies are written the way they should be *said*, not typed — units,
+> rates, and abbreviations are spelled out in full words ("three dollars and fifteen cents a square
+> foot", not "$3.15/sq ft") since a TTS engine reads the field verbatim; the on-screen invoice document
+> is unaffected and still uses the compact "sq ft" / "$3.15" notation, since that's read, not heard.
+> See §5, §8.
+
 ---
 
 ## 1. The user
