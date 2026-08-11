@@ -18,7 +18,7 @@ const corsHeaders = {
   'Vary': 'Origin',
 };
 
-const MODEL = Deno.env.get('VOICEINVOICE_MODEL') ?? 'claude-opus-4-8';
+const MODEL = Deno.env.get('VOICEINVOICE_MODEL') ?? 'claude-sonnet-5';
 
 interface ClientCtx {
   id: string;

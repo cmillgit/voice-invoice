@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSpeech } from './useSpeech';
 import { speechOut } from './speech-out';
 import { MicButton } from './MicButton';
@@ -23,6 +23,13 @@ export function ComposePanel({
   const [busy, setBusy] = useState(false);
   const [voiceOn, setVoiceOn] = useState(speechOut.supported);
   const [sendError, setSendError] = useState<string | null>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
+
+  // Keep the newest message in view as the conversation grows.
+  useEffect(() => {
+    const el = threadRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [turns, busy]);
 
   function handleMic() {
     if (listening) { pause(); return; }
@@ -55,7 +62,7 @@ export function ComposePanel({
   }
 
   return (
-    <div className="card" style={{ padding: 'var(--s-4)', display: 'flex', flexDirection: 'column', gap: 'var(--s-3)' }}>
+    <div className="card compose-panel" style={{ padding: 'var(--s-4)', display: 'flex', flexDirection: 'column', gap: 'var(--s-3)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div className="label">Dictate</div>
         {speechOut.supported && (
@@ -67,52 +74,51 @@ export function ComposePanel({
       </div>
 
       {turns.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)', maxHeight: 200, overflow: 'auto' }}>
+        <div ref={threadRef} className="compose-thread">
           {turns.map((t, i) => (
-            <div key={i} style={{
-              alignSelf: t.role === 'user' ? 'flex-end' : 'flex-start',
-              maxWidth: '90%',
-              background: t.role === 'user' ? 'var(--accent-soft)' : 'var(--surface-2)',
-              color: t.role === 'user' ? 'var(--accent-ink)' : 'var(--ink-2)',
-              border: '1px solid var(--line)', borderRadius: 'var(--radius)',
-              padding: '8px 10px', fontSize: 'var(--text-sm)',
-            }}>{t.text}</div>
+            <div key={i} className={`compose-bubble ${t.role === 'user' ? 'compose-bubble-user' : 'compose-bubble-agent'}`}>
+              {t.text}
+            </div>
           ))}
           {busy && (
-            <div style={{ alignSelf: 'flex-start', color: 'var(--muted)', fontSize: 'var(--text-sm)', padding: '4px 10px' }}>
-              Thinking…
+            <div className="compose-thinking" aria-label="Thinking">
+              <span /><span /><span />
             </div>
           )}
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 'var(--s-3)', alignItems: 'stretch' }}>
+      <div style={{ display: 'flex', gap: 'var(--s-3)', alignItems: 'flex-end' }}>
         <MicButton listening={listening} disabled={disabled || !supported || busy} onToggle={handleMic} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <textarea
-            className="textarea"
-            style={{ flex: 1, minHeight: 56 }}
-            placeholder={supported ? 'Tap the mic and speak, or type here…' : 'Voice not supported in this browser — type here…'}
-            value={transcript}
-            disabled={disabled || busy}
-            onChange={(e) => setTranscript(e.target.value)}
-          />
+          <div className="compose-input-bar">
+            <textarea
+              className="textarea"
+              style={{ flex: 1, resize: 'none' }}
+              rows={1}
+              placeholder={supported ? 'Tap the mic and speak, or type here…' : 'Voice not supported in this browser — type here…'}
+              value={transcript}
+              disabled={disabled || busy}
+              onChange={(e) => setTranscript(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+              }}
+            />
+            <button className="btn btn-primary compose-send-btn" onClick={send} disabled={disabled || busy || !transcript.trim()} aria-label="Send">
+              <SendIcon size={16} />
+            </button>
+          </div>
           {listening && interim && (
-            <div className="muted" style={{ fontSize: 'var(--text-xs)', fontStyle: 'italic' }}>{interim}</div>
+            <div className="muted" style={{ fontSize: 'var(--text-xs)', fontStyle: 'italic', paddingLeft: 4 }}>{interim}</div>
           )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s-2)' }}>
-        <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>
-          {listening ? 'Listening… tap to pause.'
-            : sendError ? `Error: ${sendError}`
-            : error ? `Mic: ${error}`
-            : 'Nothing is sent until you press Send.'}
-        </span>
-        <button className="btn btn-primary btn-sm" onClick={send} disabled={disabled || busy || !transcript.trim()}>
-          <SendIcon size={14} /> Send
-        </button>
+      <div className="muted" style={{ fontSize: 'var(--text-xs)' }}>
+        {listening ? 'Listening… tap to pause.'
+          : sendError ? `Error: ${sendError}`
+          : error ? `Mic: ${error}`
+          : 'Nothing is sent until you press Send.'}
       </div>
     </div>
   );
