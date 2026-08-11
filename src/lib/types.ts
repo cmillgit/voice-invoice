@@ -8,7 +8,7 @@ export type RateType = 'hourly' | 'per_sqft' | 'flat';
 export const RATE_TYPES: { value: RateType; label: string; unit: string }[] = [
   { value: 'hourly', label: 'Hourly', unit: 'hr' },
   { value: 'per_sqft', label: 'Per sq ft', unit: 'sq ft' },
-  { value: 'flat', label: 'Flat / per job', unit: 'job' },
+  { value: 'flat', label: 'Flat rate', unit: 'job' },
 ];
 
 export function rateTypeLabel(t: RateType): string {

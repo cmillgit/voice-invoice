@@ -104,7 +104,7 @@ export function InvoicePdf({ invoice }: { invoice: Invoice }) {
               <View style={s.cDesc}>
                 <Text>{li.description}</Text>
               </View>
-              <Text style={s.cQty}>{li.is_deduction ? '—' : `${qty(li.quantity)} ${rateTypeUnit(li.rate_type)}`}</Text>
+              <Text style={s.cQty}>{li.is_deduction || li.rate_type === 'flat' ? '—' : `${qty(li.quantity)} ${rateTypeUnit(li.rate_type)}`}</Text>
               <Text style={s.cRate}>{li.is_deduction ? '—' : money(li.rate_amount)}</Text>
               <Text style={[s.cAmt, s.amtStrong, li.is_deduction ? { color: DANGER } : {}]}>{money(li.amount)}</Text>
             </View>
