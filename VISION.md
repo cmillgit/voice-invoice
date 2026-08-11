@@ -62,9 +62,11 @@
 > (mandatory human review of the live preview, with edit/delete, before Approve writes anything — §4.3)
 > already covers deductions exactly the same way it covers every other voice-set field. Corrected: the
 > agent can now create a deduction line when the user states a concrete dollar amount (never a computed
-> percentage — it must ask for the dollar figure, preserving deterministic-money); tax, discounts, and
-> editing/voiding an issued invoice remain genuinely out of reach only because there's no field for them
-> anywhere in the app, voice or manual. See §5, §10.
+> percentage — it must ask for the dollar figure, preserving deterministic-money); tax and discounts
+> remain genuinely out of reach because there's no field for them anywhere in the app, voice or manual.
+> **Manual invoice editing shipped later the same day (2026-08-10)** — see §4.5, §9 — but that is a new
+> *manual* Edit button only; the voice agent still cannot open, edit, or reissue an existing invoice by
+> voice, and this capability boundary is unchanged. See §5, §10.
 
 > **Model swap + natural voice output (2026-08-10, later same day):** `parse-invoice` moved from
 > `claude-opus-4-8` to `claude-sonnet-5` (same request surface, no other changes needed). Separately,
@@ -216,7 +218,13 @@ Clients are set up **ahead of time** so the invoicing flow can assume they exist
 - Past invoices are queryable structured records (the durable replacement for the notebook).
 - **Client profiles are editable**, and **new rate structures can be added** over time, through the
   same setup surface.
-- **Editing/voiding/versioning already-issued invoices is out of scope for phase 1** (see §9).
+- **Invoices are editable, draft-or-issued, plain in-place overwrite** — reversed 2026-08-10 by
+  explicit product-owner decision (see §9). A `draft` status was added alongside the existing
+  `issued` status; a draft can be freely edited, and an issued invoice can be reopened for editing
+  via a deliberate **Edit** action. This is a **deliberate simplification, not the eventual design**:
+  there is no version history or correction log, edits simply overwrite the row. A full audit-trail/
+  immutable-with-corrections design remains a future consideration if ever needed — not what shipped
+  here.
 
 ---
 
@@ -546,10 +554,12 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   can edit or delete them before anything is written to the database. See §5.
 - **Agent capability boundary, enforced in the system prompt (2026-08-10):** the voice agent can only
   ever affect line items (including deductions — see above), `materials_total`, `job_label`, and
-  `notes`. Tax, discounts/markups, and editing or voiding an already-issued invoice remain out of
-  reach — not a money-safety restriction, but because none of those have any representation anywhere
-  in the app, voice or manual, to write to. When asked for one, the agent must say so plainly and
-  never write the request into `notes` while implying it took effect.
+  `notes`. Tax and discounts/markups remain out of reach — not a money-safety restriction, but because
+  neither has any representation anywhere in the app, voice or manual, to write to. When asked for one,
+  the agent must say so plainly and never write the request into `notes` while implying it took effect.
+  Separately, **opening or editing an existing invoice is a manual-only action** (see below) — the
+  voice agent has no capability to load, edit, or reissue a past invoice by voice; voice composition
+  only ever builds a brand-new invoice draft.
   This rule went through two iterations the same day: a bug report showed the agent telling the user a
   dictated holdback had been "noted" and "the app will handle it," when nothing downstream applied it
   and the total silently stayed wrong. The first fix blocked the agent from creating deductions at all
@@ -564,8 +574,10 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
   soundwave-bars app mark and the old text-only "From" block, shown top-center on the document/PDF
   with "RAM PAINTING" + phone. Business phone snapshotted onto each invoice at approval time (same
   pattern as client identity). See §5 and §7.
-- **Invoices history/browse tab** — every issued invoice is listed and viewable (reusing the same
-  document component, read-only) with a re-download PDF action.
+- **Invoices history/browse tab** — every draft and issued invoice is listed. Draft rows open
+  straight into the editable compose screen on click; issued rows open the same read-only document
+  view as before, now with an added **Edit** button that opens it for editing. Also gained sortable
+  columns, a client-side search box, and a **Job** column. See §9.
 - **Job / project is a first-class field** (`invoices.job_label`), separate from freeform `notes`.
   Manual entry (compose form) **and** voice-settable (the agent extracts it like it does `notes`/
   `materials_total`). Rendered centered, above the line-item table, on both the live preview and the
@@ -576,7 +588,9 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
 - **Client email addresses** (`clients.emails text[]`) — comma-separated, mirrors how `synonyms`
   already works. **Data capture only** — there is still no send feature; this only records where an
   invoice *would* go. Basic format validation on entry.
-- **No tax**, **no email sending**, **no invoice editing/voiding/versioning** in phase 1.
+- **No tax**, **no email sending** in phase 1. **Invoice editing shipped 2026-08-10** (see below) —
+  plain in-place overwrite with a new `draft` status, deliberately without versioning/voiding/an audit
+  trail.
 - One generic template for preview and final document; fields map cleanly to the DB; line items
   rendered as a **table**.
 - Simple **date-based invoice numbering** for now.
@@ -605,8 +619,14 @@ The user's chronic neck/nerve pain is a primary design driver, not a compliance 
 - **Per-client / branded invoice templates.**
 - **Invoice numbering scheme** — replace with the father's real-world convention. Real invoices
   confirm it's ad hoc (`783`, `RCG101`, `TIM010`), not the date-based scheme phase 1 uses.
-- **Invoice editing / voiding / versioning / corrections** — explicitly out of phase 1; will need an
-  immutable-with-corrections design when added.
+- **Invoice editing shipped 2026-08-10, by explicit product-owner decision reversing the earlier
+  phase-1 call.** Implemented as plain in-place overwrite-on-edit: a new `invoices.status` value
+  (`'draft'`, alongside the existing `'issued'`), a row created on first Save draft or Approve & issue,
+  freely editable afterward via a manual Edit action (drafts inline from the history list, issued
+  invoices via an explicit Edit button behind the read-only view). **Deliberately no version history,
+  no correction log, no voiding** — this is a simplification, not the end state. **Invoice voiding /
+  versioning / an audit-trail (immutable-with-corrections) design remains open/deferred** — revisit if
+  ever needed.
 - **PO numbers, distinct service date** on the document. (Business identity, including a real logo,
   is now decided/shipped — see above and §5.)
 - **Business street address is no longer shown on the document** — the new logo header (§7) only
