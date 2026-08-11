@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Invoice } from '../../lib/types';
 import { money, formatDate } from '../../lib/format';
 import { listInvoices, deleteInvoice } from './api';
@@ -7,6 +7,27 @@ import { DownloadIcon, TrashIcon } from '../../components/icons';
 
 type SortKey = 'invoice_number' | 'issue_date' | 'client_name' | 'job_label' | 'total';
 type SortDir = 'asc' | 'desc';
+
+// A row matches either on a field already visible in the table (invoice #, client, job)
+// or, failing that, on a line-item description the user wouldn't otherwise see — in which
+// case we show a small highlighted preview explaining why the row is here, file-explorer-
+// search style. A row that matches a visible field never shows the preview, even if a line
+// item also happens to match — the visible field already explains the match.
+interface SearchRow { invoice: Invoice; lineItemMatch: string | null }
+
+function highlightMatch(text: string, query: string): ReactNode {
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark style={{ background: 'var(--accent-soft)', color: 'var(--accent-ink)', borderRadius: 2 }}>
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
 
 interface InvoiceHistoryPageProps {
   onEditInvoice: (id: string) => void;
@@ -54,13 +75,23 @@ export function InvoiceHistoryPage({ onEditInvoice }: InvoiceHistoryPageProps) {
     }
   }
 
-  const filtered = useMemo(() => {
+  const filtered = useMemo((): SearchRow[] => {
     const q = search.trim().toLowerCase();
-    if (!q) return invoices;
-    return invoices.filter((inv) =>
-      inv.invoice_number.toLowerCase().includes(q) ||
-      inv.client_name.toLowerCase().includes(q) ||
-      (inv.job_label ?? '').toLowerCase().includes(q));
+    if (!q) return invoices.map((invoice) => ({ invoice, lineItemMatch: null }));
+    const rows: SearchRow[] = [];
+    for (const invoice of invoices) {
+      const topLevelMatch =
+        invoice.invoice_number.toLowerCase().includes(q) ||
+        invoice.client_name.toLowerCase().includes(q) ||
+        (invoice.job_label ?? '').toLowerCase().includes(q);
+      if (topLevelMatch) {
+        rows.push({ invoice, lineItemMatch: null });
+        continue;
+      }
+      const matchedItem = (invoice.line_items ?? []).find((li) => li.description.toLowerCase().includes(q));
+      if (matchedItem) rows.push({ invoice, lineItemMatch: matchedItem.description });
+    }
+    return rows;
   }, [invoices, search]);
 
   const sorted = useMemo(() => {
@@ -70,11 +101,11 @@ export function InvoiceHistoryPage({ onEditInvoice }: InvoiceHistoryPageProps) {
       let av: string | number;
       let bv: string | number;
       switch (sortKey) {
-        case 'total': av = a.total; bv = b.total; break;
-        case 'issue_date': av = a.issue_date; bv = b.issue_date; break;
-        case 'job_label': av = (a.job_label ?? '').toLowerCase(); bv = (b.job_label ?? '').toLowerCase(); break;
-        case 'client_name': av = a.client_name.toLowerCase(); bv = b.client_name.toLowerCase(); break;
-        default: av = a.invoice_number.toLowerCase(); bv = b.invoice_number.toLowerCase();
+        case 'total': av = a.invoice.total; bv = b.invoice.total; break;
+        case 'issue_date': av = a.invoice.issue_date; bv = b.invoice.issue_date; break;
+        case 'job_label': av = (a.invoice.job_label ?? '').toLowerCase(); bv = (b.invoice.job_label ?? '').toLowerCase(); break;
+        case 'client_name': av = a.invoice.client_name.toLowerCase(); bv = b.invoice.client_name.toLowerCase(); break;
+        default: av = a.invoice.invoice_number.toLowerCase(); bv = b.invoice.invoice_number.toLowerCase();
       }
       if (av < bv) return -1 * dir;
       if (av > bv) return 1 * dir;
@@ -127,7 +158,7 @@ export function InvoiceHistoryPage({ onEditInvoice }: InvoiceHistoryPageProps) {
         <div className="field" style={{ marginBottom: 'var(--s-4)' }}>
           <input
             className="input"
-            placeholder="Search by invoice #, client, or job…"
+            placeholder="Search by invoice #, client, job, or line item…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -158,24 +189,34 @@ export function InvoiceHistoryPage({ onEditInvoice }: InvoiceHistoryPageProps) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((inv) => (
-                <tr key={inv.id} style={{ cursor: 'pointer' }} onClick={() => handleRowClick(inv)}>
-                  <td className="mono">{inv.invoice_number}</td>
-                  <td className="tnum">{formatDate(inv.issue_date)}</td>
-                  <td style={{ fontWeight: 600, color: 'var(--ink)' }}>{inv.client_name}</td>
-                  <td className="muted">{inv.job_label ?? '—'}</td>
-                  <td>
-                    {inv.status === 'draft' && (
-                      <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>Draft</span>
-                    )}
-                  </td>
-                  <td className="num tnum" style={{ fontWeight: 600 }}>{money(inv.total)}</td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    <button className="btn btn-ghost btn-sm btn-danger" onClick={() => handleDelete(inv)} aria-label="Delete">
-                      <TrashIcon size={14} />
-                    </button>
-                  </td>
-                </tr>
+              {sorted.map(({ invoice: inv, lineItemMatch }) => (
+                <Fragment key={inv.id}>
+                  <tr style={{ cursor: 'pointer' }} onClick={() => handleRowClick(inv)}>
+                    <td className="mono">{inv.invoice_number}</td>
+                    <td className="tnum">{formatDate(inv.issue_date)}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--ink)' }}>{inv.client_name}</td>
+                    <td className="muted">{inv.job_label ?? '—'}</td>
+                    <td>
+                      {inv.status === 'draft' && (
+                        <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>Draft</span>
+                      )}
+                    </td>
+                    <td className="num tnum" style={{ fontWeight: 600 }}>{money(inv.total)}</td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <button className="btn btn-ghost btn-sm btn-danger" onClick={() => handleDelete(inv)} aria-label="Delete">
+                        <TrashIcon size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                  {lineItemMatch && (
+                    <tr style={{ cursor: 'pointer' }} onClick={() => handleRowClick(inv)}>
+                      <td colSpan={7} style={{ paddingTop: 0, fontSize: 'var(--text-xs)' }}>
+                        <span className="muted">↳ line item: </span>
+                        {highlightMatch(lineItemMatch, search.trim())}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
