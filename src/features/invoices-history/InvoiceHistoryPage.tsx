@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Invoice } from '../../lib/types';
 import { money, formatDate } from '../../lib/format';
-import { listInvoices } from './api';
+import { listInvoices, deleteInvoice } from './api';
 import { InvoiceDocument } from '../invoice/InvoiceDocument';
-import { DownloadIcon } from '../../components/icons';
+import { DownloadIcon, TrashIcon } from '../../components/icons';
 
 type SortKey = 'invoice_number' | 'issue_date' | 'client_name' | 'job_label' | 'total';
 type SortDir = 'asc' | 'desc';
@@ -96,6 +96,18 @@ export function InvoiceHistoryPage({ onEditInvoice }: InvoiceHistoryPageProps) {
     }
   }
 
+  async function handleDelete(inv: Invoice) {
+    const label = inv.status === 'draft' ? `draft #${inv.invoice_number}` : `invoice #${inv.invoice_number}`;
+    if (!confirm(`Delete ${label} for ${inv.client_name}? This cannot be undone.`)) return;
+    try {
+      await deleteInvoice(inv.id);
+      setInvoices((all) => all.filter((i) => i.id !== inv.id));
+      if (selected?.id === inv.id) setSelected(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete.');
+    }
+  }
+
   return (
     <div style={{ padding: 'var(--s-6)', maxWidth: 1000, margin: '0 auto' }}>
       <header style={{ marginBottom: 'var(--s-5)' }}>
@@ -142,6 +154,7 @@ export function InvoiceHistoryPage({ onEditInvoice }: InvoiceHistoryPageProps) {
                 <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('job_label')}>Job{sortIndicator('job_label')}</th>
                 <th>Status</th>
                 <th className="num" style={{ cursor: 'pointer' }} onClick={() => toggleSort('total')}>Total{sortIndicator('total')}</th>
+                <th style={{ width: 1 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -157,6 +170,11 @@ export function InvoiceHistoryPage({ onEditInvoice }: InvoiceHistoryPageProps) {
                     )}
                   </td>
                   <td className="num tnum" style={{ fontWeight: 600 }}>{money(inv.total)}</td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <button className="btn btn-ghost btn-sm btn-danger" onClick={() => handleDelete(inv)} aria-label="Delete">
+                      <TrashIcon size={14} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -177,6 +195,7 @@ export function InvoiceHistoryPage({ onEditInvoice }: InvoiceHistoryPageProps) {
               <button className="btn btn-primary" onClick={() => downloadPdf(selected)} disabled={pdfBusy}>
                 <DownloadIcon size={16} /> {pdfBusy ? 'Preparing…' : 'Download PDF'}
               </button>
+              <button className="btn btn-danger" onClick={() => handleDelete(selected)}>Delete</button>
               <button className="btn" onClick={() => setSelected(null)}>Close</button>
             </div>
             <InvoiceDocument

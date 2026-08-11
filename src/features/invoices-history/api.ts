@@ -10,3 +10,9 @@ export async function listInvoices(): Promise<Invoice[]> {
   if (error) throw error;
   return (data ?? []) as Invoice[];
 }
+
+/** Line items cascade-delete with the invoice row (on delete cascade, see schema). */
+export async function deleteInvoice(id: string): Promise<void> {
+  const { error } = await supabase.from('invoices').delete().eq('id', id);
+  if (error) throw error;
+}
